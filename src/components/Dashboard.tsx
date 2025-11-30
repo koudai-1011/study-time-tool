@@ -8,7 +8,6 @@ import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat
 export const Dashboard: React.FC = () => {
   const {
     totalStudiedHours,
-    daysRemaining,
     todayStudiedHours,
     settings,
     timeRemainingSeconds
