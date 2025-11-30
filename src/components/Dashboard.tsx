@@ -125,8 +125,9 @@ export const Dashboard: React.FC = () => {
           <StatCard
             icon={<Calendar className="text-amber-500" />}
             label="残り時間"
-            value={`${daysRemaining}日`}
-            subtext={formatCountdownJapanese(timeRemainingSeconds)}
+            // 表示は正式な残り時間のみ（秒単位で計算した正確な表示）
+            value={formatCountdownJapanese(timeRemainingSeconds)}
+            subtext=""
             color="bg-amber-50"
           />
         </motion.div>
