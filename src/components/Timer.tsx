@@ -29,14 +29,14 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       }
     }
   }, []);
-  
+
   // Update notification when elapsed changes
   useEffect(() => {
     if (isRunning && elapsed > 0 && elapsed % 10 === 0) {
       showNotification();
     }
   }, [elapsed, isRunning, selectedCategory, settings.categories, notificationPermission]);
-  
+
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = window.setInterval(() => {
@@ -45,7 +45,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
       // Request wake lock
       requestWakeLock();
-      
+
       // Show initial notification
       if (elapsed === 0) {
         showNotification();
@@ -89,17 +89,17 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     if (notificationPermission === 'granted' && 'Notification' in window) {
       // Close previous notification
       closeNotification();
-      
+
       const category = settings.categories[selectedCategory];
       const hours = Math.floor(elapsed / 3600);
       const minutes = Math.floor((elapsed % 3600) / 60);
       const seconds = elapsed % 60;
-      const timeText = hours > 0 
+      const timeText = hours > 0
         ? `${hours}時間${minutes}分${seconds}秒`
         : minutes > 0
-        ? `${minutes}分${seconds}秒`
-        : `${seconds}秒`;
-      
+          ? `${minutes}分${seconds}秒`
+          : `${seconds}秒`;
+
       notificationRef.current = new Notification('学習記録 - タイマー実行中', {
         body: `${category.name}: ${timeText}`,
         icon: '/vite.svg',
@@ -136,11 +136,10 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           key={category.id}
           type="button"
           onClick={() => setSelectedCategory(category.id)}
-          className={`p-3 rounded-lg transition-all ${
-            selectedCategory === category.id
+          className={`p-3 rounded-lg transition-all ${selectedCategory === category.id
               ? 'ring-4 ring-white scale-110'
               : 'opacity-60 hover:opacity-100'
-          }`}
+            }`}
           style={{ backgroundColor: category.color }}
           title={category.name}
         >
@@ -212,9 +211,9 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   return (
     <div className="bg-white rounded-3xl shadow-xl shadow-primary-900/5 border border-slate-100 p-6 md:p-8 flex flex-col items-center justify-center relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-400 to-primary-600" />
-      
+
       <CategorySelector />
-      
+
       <div className="text-5xl md:text-7xl font-bold text-slate-800 font-mono tracking-wider mb-8 tabular-nums">
         {formatTime(elapsed)}
       </div>
@@ -225,7 +224,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             onClick={() => setIsRunning(true)}
             className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-2xl shadow-lg shadow-primary-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
-            <Play fill="currentColor" />
+            <Play fill="currentColor" size={20} className="md:w-6 md:h-6" />
             開始
           </button>
         ) : (
@@ -233,7 +232,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             onClick={() => setIsRunning(false)}
             className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-2xl shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
           >
-            <Pause fill="currentColor" />
+            <Pause fill="currentColor" size={20} className="md:w-6 md:h-6" />
             一時停止
           </button>
         )}
@@ -244,10 +243,10 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           className="bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 rounded-2xl transition-all active:scale-95"
           title="終了して保存"
         >
-          <Square fill="currentColor" />
+          <Square fill="currentColor" size={20} className="md:w-6 md:h-6" />
         </button>
       </div>
-      
+
       {isRunning && (
         <p className="mt-6 text-primary-600 font-medium animate-pulse">
           集中モード中...
