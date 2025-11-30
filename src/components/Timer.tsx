@@ -134,6 +134,29 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     }
   };
 
+  // Lightweight animated time display that pulses on each second without remounting
+  const AnimatedTimeDisplay: React.FC<{ elapsed: number }> = ({ elapsed }) => {
+    const [pulse, setPulse] = React.useState(false);
+
+    React.useEffect(() => {
+      // trigger a short pulse animation on each update
+      setPulse(true);
+      const t = window.setTimeout(() => setPulse(false), 140);
+      return () => clearTimeout(t);
+    }, [elapsed]);
+
+    return (
+      <motion.span
+        className="tabular-nums inline-block"
+        style={{ display: 'inline-block', willChange: 'transform' }}
+        animate={{ scale: pulse ? 1.035 : 1 }}
+        transition={{ duration: 0.12, ease: 'easeOut' }}
+      >
+        {formatTime(elapsed)}
+      </motion.span>
+    );
+  };
+
   const releaseWakeLock = async () => {
     if (wakeLockRef.current) {
       await wakeLockRef.current.release();
@@ -238,6 +261,8 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   );
 
   if (fullscreen) {
+    // Smooth animations: avoid remounting the time element each second (no key by elapsed)
+    // and trigger a lightweight transform animation on change to reduce layout thrash.
     return (
       <ErrorBoundary onClose={onClose}>
         <motion.div
@@ -266,12 +291,14 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
               </motion.div>
             </motion.div>
 
-            <motion.div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 font-mono tracking-wider mb-8 md:mb-12 tabular-nums"
-              initial={{ scale: 0.9, opacity: 0 }}
+            <motion.div
+              className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 font-mono tracking-wider mb-8 md:mb-12 tabular-nums"
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              style={{ willChange: 'transform, opacity' }}
             >
-              <motion.span key={elapsed} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.2 }}>{formatTime(elapsed)}</motion.span>
+              <AnimatedTimeDisplay elapsed={elapsed} />
             </motion.div>
 
             <motion.div className="flex items-center gap-4 md:gap-6 justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
