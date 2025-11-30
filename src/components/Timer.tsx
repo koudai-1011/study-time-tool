@@ -15,7 +15,20 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   const [selectedCategory, setSelectedCategory] = useState(0);
   const intervalRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+  const notificationRef = useRef<Notification | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
 
+  // Request notification permission on mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      setNotificationPermission(Notification.permission);
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          setNotificationPermission(permission);
+        });
+      }
+    }
+  }, []);
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = window.setInterval(() => {
@@ -24,16 +37,31 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
       // Request wake lock
       requestWakeLock();
+      
+      // Show initial notification
+      showNotification();
+      
+      // Update notification every 10 seconds
+      const notificationInterval = window.setInterval(() => {
+        showNotification();
+      }, 10000);
+      
+      return () => {
+        clearInterval(notificationInterval);
+      };
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
       // Release wake lock
       releaseWakeLock();
+      // Close notification
+      closeNotification();
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
       releaseWakeLock();
+      closeNotification();
     };
   }, [isRunning]);
 
@@ -56,12 +84,45 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     }
   };
 
+  const showNotification = () => {
+    if (notificationPermission === 'granted' && 'Notification' in window) {
+      // Close previous notification
+      closeNotification();
+      
+      const category = settings.categories[selectedCategory];
+      const hours = Math.floor(elapsed / 3600);
+      const minutes = Math.floor((elapsed % 3600) / 60);
+      const seconds = elapsed % 60;
+      const timeText = hours > 0 
+        ? `${hours}時間${minutes}分${seconds}秒`
+        : minutes > 0
+        ? `${minutes}分${seconds}秒`
+        : `${seconds}秒`;
+      
+      notificationRef.current = new Notification('学習記録 - タイマー実行中', {
+        body: `${category.name}: ${timeText}`,
+        icon: '/vite.svg',
+        tag: 'study-timer',
+        requireInteraction: false,
+        silent: true,
+      });
+    }
+  };
+
+  const closeNotification = () => {
+    if (notificationRef.current) {
+      notificationRef.current.close();
+      notificationRef.current = null;
+    }
+  };
+
   const handleStop = () => {
     if (elapsed > 0) {
       addLog(elapsed, selectedCategory);
       setElapsed(0);
     }
     setIsRunning(false);
+    closeNotification();
     if (fullscreen && onClose) {
       onClose();
     }
