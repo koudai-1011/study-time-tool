@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { StudyProvider } from './context/StudyContext';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout';
