@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { motion } from 'framer-motion';
 import { 
   format, 
   startOfMonth, 
@@ -88,12 +89,22 @@ export const CalendarView: React.FC = () => {
             }))].filter(Boolean);
 
             return (
-              <button 
+              <motion.button 
                 key={day.toISOString()}
                 onClick={() => setSelectedDate(day.toISOString())}
-                className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all hover:scale-105 border ${
+                className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all border ${
                   hasStudy ? 'bg-primary-50 border-primary-100' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
                 } ${isToday ? 'ring-2 ring-primary-500' : ''}`}
+                whileHover={{ scale: 1.1, y: -5 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ 
+                  delay: dayIndex * 0.01,
+                  type: 'spring',
+                  stiffness: 400,
+                  damping: 25
+                }}
               >
                 <span className={`text-sm font-medium mb-1 ${
                   isToday ? 'bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md' : 'text-slate-600'
@@ -123,7 +134,7 @@ export const CalendarView: React.FC = () => {
                     />
                   </>
                 )}
-              </button>
+              </motion.button>
             );
           })}
         </div>

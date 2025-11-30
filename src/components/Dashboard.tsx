@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
@@ -45,16 +46,26 @@ export const Dashboard: React.FC = () => {
         </header>
 
         {/* Timer Button at Top */}
-        <button
+        <motion.button
           onClick={() => setFullscreenTimer(true)}
-          className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold py-6 rounded-2xl shadow-xl shadow-primary-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-3 text-lg"
+          className="w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold py-6 rounded-2xl shadow-xl shadow-primary-600/30 transition-all flex items-center justify-center gap-3 text-lg"
+          whileHover={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(59, 130, 246, 0.5)' }}
+          whileTap={{ scale: 0.98 }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
         >
           <Maximize2 size={24} />
           計測開始
-        </button>
+        </motion.button>
 
         {/* Progress Section */}
-        <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm">
+        <motion.div 
+          className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
           <h3 className="text-lg font-bold text-slate-800 mb-6">全体の進捗</h3>
           
           <div className="relative pt-4">
@@ -80,10 +91,15 @@ export const Dashboard: React.FC = () => {
               順調です！目標の{settings.targetHours}時間達成に向けて頑張りましょう。
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, staggerChildren: 0.1 }}
+        >
           <StatCard 
             icon={<Target className="text-blue-500" />}
             label="1日の目標"
@@ -112,7 +128,7 @@ export const Dashboard: React.FC = () => {
             subtext={formatCountdownJapanese(timeRemainingSeconds)}
             color="bg-amber-50"
           />
-        </div>
+        </motion.div>
       </div>
 
       {/* Fullscreen Timer */}
@@ -124,12 +140,29 @@ export const Dashboard: React.FC = () => {
 };
 
 const StatCard = ({ icon, label, value, subtext, color }: { icon: React.ReactNode, label: string, value: string, subtext: string, color: string }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-    <div className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center mb-4`}>
+  <motion.div 
+    className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
+    whileHover={{ scale: 1.05, y: -5 }}
+    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+  >
+    <motion.div 
+      className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center mb-4`}
+      whileHover={{ rotate: 360 }}
+      transition={{ duration: 0.6 }}
+    >
       {icon}
-    </div>
+    </motion.div>
     <p className="text-slate-500 text-sm font-medium">{label}</p>
-    <h3 className="text-2xl font-bold text-slate-800 mt-1">{value}</h3>
+    <motion.h3 
+      className="text-2xl font-bold text-slate-800 mt-1"
+      key={value}
+      initial={{ opacity: 0, scale: 0.5 }}
+      animate={{ opacity: 1, scale: 1 }}
+    >
+      {value}
+    </motion.h3>
     <p className="text-xs text-slate-400 mt-1">{subtext}</p>
-  </div>
+  </motion.div>
 );
