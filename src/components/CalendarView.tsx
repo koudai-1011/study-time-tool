@@ -32,24 +32,29 @@ export const CalendarView: React.FC = () => {
     return totalSeconds / 3600;
   };
 
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
 
   return (
     <div className="space-y-8">
-      <header className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold text-slate-800">学習履歴</h2>
-          <p className="text-slate-500 mt-2">日々の学習記録を確認できます。</p>
-        </div>
-        <div className="flex items-center gap-4 bg-white p-2 rounded-xl border border-slate-100 shadow-sm">
-          <button onClick={prevMonth} className="p-2 hover:bg-slate-50 rounded-lg transition-colors">
+      <header className="mb-8">
+        <h2 className="text-3xl font-bold text-slate-800 mb-2">学習履歴</h2>
+        <p className="text-slate-500">日々の学習履歴を確認できます。</p>
+        
+        <div className="flex items-center justify-between mt-6">
+          <button
+            onClick={handlePrevMonth}
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          >
             <ChevronLeft className="text-slate-600" />
           </button>
-          <span className="text-lg font-bold text-slate-700 min-w-[140px] text-center">
+          <h3 className="text-xl font-bold text-slate-700">
             {format(currentMonth, 'yyyy年M月', { locale: ja })}
-          </span>
-          <button onClick={nextMonth} className="p-2 hover:bg-slate-50 rounded-lg transition-colors">
+          </h3>
+          <button
+            onClick={handleNextMonth}
+            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          >
             <ChevronRight className="text-slate-600" />
           </button>
         </div>

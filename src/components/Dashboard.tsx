@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
@@ -19,6 +19,23 @@ export const Dashboard: React.FC = () => {
     : 0;
 
   const [fullscreenTimer, setFullscreenTimer] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Update current time every second for real-time daily goal calculation
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Recalculate daily goal based on current time
+  const now = currentTime;
+  const endDateParsed = settings.endDate ? new Date(settings.endDate) : null;
+  const timeUntilEnd = endDateParsed ? Math.max(0, endDateParsed.getTime() - now.getTime()) : 0;
+  const hoursUntilEnd = timeUntilEnd / (1000 * 60 * 60);
+  const remainingHoursToStudy = Math.max(0, settings.targetHours - totalStudiedHours);
+  const realtimeDailyGoal = hoursUntilEnd > 0 ? remainingHoursToStudy / hoursUntilEnd * 24 : 0;
 
   return (
     <>
@@ -36,38 +53,6 @@ export const Dashboard: React.FC = () => {
           <Maximize2 size={24} />
           計測開始
         </button>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard 
-            icon={<Target className="text-blue-500" />}
-            label="1日の目標"
-            value={formatTimeJapanese(dailyGoalHours)}
-            subtext="期限まで"
-            color="bg-blue-50"
-          />
-          <StatCard 
-            icon={<Clock className="text-emerald-500" />}
-            label="今日の学習"
-            value={formatTimeJapanese(todayStudiedHours)}
-            subtext="今日の合計"
-            color="bg-emerald-50"
-          />
-          <StatCard 
-            icon={<TrendingUp className="text-violet-500" />}
-            label="総学習時間"
-            value={formatTimeJapanese(totalStudiedHours)}
-            subtext={`目標 ${settings.targetHours}時間`}
-            color="bg-violet-50"
-          />
-          <StatCard 
-            icon={<Calendar className="text-amber-500" />}
-            label="残り時間"
-            value={`${daysRemaining}日`}
-            subtext={formatCountdownJapanese(timeRemainingSeconds)}
-            color="bg-amber-50"
-          />
-        </div>
 
         {/* Progress Section */}
         <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm">
@@ -96,6 +81,38 @@ export const Dashboard: React.FC = () => {
               順調です！目標の{settings.targetHours}時間達成に向けて頑張りましょう。
             </p>
           </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard 
+            icon={<Target className="text-blue-500" />}
+            label="1日の目標"
+            value={formatTimeJapanese(realtimeDailyGoal)}
+            subtext="期限まで"
+            color="bg-blue-50"
+          />
+          <StatCard 
+            icon={<Clock className="text-emerald-500" />}
+            label="今日の学習"
+            value={formatTimeJapanese(todayStudiedHours)}
+            subtext="今日の合計"
+            color="bg-emerald-50"
+          />
+          <StatCard 
+            icon={<TrendingUp className="text-violet-500" />}
+            label="総学習時間"
+            value={formatTimeJapanese(totalStudiedHours)}
+            subtext={`目標 ${settings.targetHours}時間`}
+            color="bg-violet-50"
+          />
+          <StatCard 
+            icon={<Calendar className="text-amber-500" />}
+            label="残り時間"
+            value={`${daysRemaining}日`}
+            subtext={formatCountdownJapanese(timeRemainingSeconds)}
+            color="bg-amber-50"
+          />
         </div>
       </div>
 
