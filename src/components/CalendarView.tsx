@@ -15,10 +15,12 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { clsx } from 'clsx';
 import { formatTimeJapanese } from '../utils/timeFormat';
+import { DayDetailModal } from './DayDetailModal';
 
 export const CalendarView: React.FC = () => {
-  const { logs } = useStudy();
+  const { logs, settings } = useStudy();
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const daysInMonth = eachDayOfInterval({
     start: startOfMonth(currentMonth),
@@ -86,32 +88,41 @@ export const CalendarView: React.FC = () => {
                 className={clsx(
                   "aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all hover:scale-105",
                   hasStudy ? "bg-primary-50 border-primary-100" : "bg-slate-50 border-slate-100 hover:bg-slate-100",
-                  "border"
+                  "border",
+                  isToday ? "ring-2 ring-primary-500" : ""
                 )}
               >
                 <span className={clsx(
                   "text-sm font-medium mb-1",
-                  isSameDay(day, new Date()) ? "bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md" : "text-slate-600"
+                  isToday ? "bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md" : "text-slate-600"
                 )}>
                   {format(day, 'd')}
                 </span>
-                
+
                 {hasStudy && (
                   <>
                     <span className="text-xs font-bold text-primary-600">
                       {formatTimeJapanese(hours)}
                     </span>
-                    <div 
+                    <div
                       className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-b-2xl opacity-50"
                       style={{ opacity: 0.2 + (intensity * 0.8) }}
                     />
                   </>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>
       </div>
+
+      {/* Day Detail Modal */}
+      {selectedDate && (
+        <DayDetailModal
+          date={selectedDate}
+          onClose={() => setSelectedDate(null)}
+        />
+      )}
     </div>
   );
 };

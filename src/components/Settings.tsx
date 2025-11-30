@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useStudy } from '../context/StudyContext';
 import { useAuth } from '../context/AuthContext';
 import { Save, LogIn, LogOut } from 'lucide-react';
+import { CategorySettings } from './CategorySettings';
 
 export const Settings: React.FC = () => {
   const { settings, updateSettings } = useStudy();
@@ -19,7 +20,7 @@ export const Settings: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({ targetHours, startDate, endDate });
+    updateSettings({ ...settings, targetHours, startDate, endDate });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
@@ -130,6 +131,9 @@ export const Settings: React.FC = () => {
           </div>
         </form>
       </div>
+
+      {/* Category Settings */}
+      <CategorySettings />
     </div>
   );
 };

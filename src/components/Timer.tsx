@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Pause, Square, X } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { formatTime } from '../utils/timeFormat';
@@ -9,29 +9,56 @@ interface TimerProps {
 }
 
 export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => {
-  const { addLog } = useStudy();
+  const { addLog, settings } = useStudy();
   const [isRunning, setIsRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState(0);
   const intervalRef = useRef<number | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = window.setInterval(() => {
         setElapsed((prev) => prev + 1);
       }, 1000);
+
+      // Request wake lock
+      requestWakeLock();
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      // Release wake lock
+      releaseWakeLock();
     }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      releaseWakeLock();
     };
   }, [isRunning]);
 
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await navigator.wakeLock.request('screen');
+        console.log('Wake Lock activated');
+      }
+    } catch (err) {
+      console.error('Wake Lock error:', err);
+    }
+  };
+
+  const releaseWakeLock = async () => {
+    if (wakeLockRef.current) {
+      await wakeLockRef.current.release();
+      wakeLockRef.current = null;
+      console.log('Wake Lock released');
+    }
+  };
+
   const handleStop = () => {
     if (elapsed > 0) {
-      addLog(elapsed);
+      addLog(elapsed, selectedCategory);
       setElapsed(0);
     }
     setIsRunning(false);
@@ -39,6 +66,27 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       onClose();
     }
   };
+
+  const CategorySelector = ({ compact = false }: { compact?: boolean }) => (
+    <div className={`grid ${compact ? 'grid-cols-5' : 'grid-cols-5'} gap-2 ${compact ? '' : 'mb-4'}`}>
+      {settings.categories.map(category => (
+        <button
+          key={category.id}
+          type="button"
+          onClick={() => setSelectedCategory(category.id)}
+          className={`p-3 rounded-lg transition-all ${
+            selectedCategory === category.id
+              ? 'ring-4 ring-white scale-110'
+              : 'opacity-60 hover:opacity-100'
+          }`}
+          style={{ backgroundColor: category.color }}
+          title={category.name}
+        >
+          {compact ? '' : category.name}
+        </button>
+      ))}
+    </div>
+  );
 
   if (fullscreen) {
     return (
@@ -50,7 +98,12 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           <X size={24} className="text-slate-600" />
         </button>
 
-        <div className="text-center">
+        <div className="text-center w-full max-w-2xl">
+          <div className="mb-6">
+            <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories[selectedCategory].name}</p>
+            <CategorySelector compact />
+          </div>
+
           <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 font-mono tracking-wider mb-8 md:mb-12 tabular-nums">
             {formatTime(elapsed)}
           </div>
@@ -97,6 +150,8 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   return (
     <div className="bg-white rounded-3xl shadow-xl shadow-primary-900/5 border border-slate-100 p-6 md:p-8 flex flex-col items-center justify-center relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-400 to-primary-600" />
+      
+      <CategorySelector />
       
       <div className="text-5xl md:text-7xl font-bold text-slate-800 font-mono tracking-wider mb-8 tabular-nums">
         {formatTime(elapsed)}

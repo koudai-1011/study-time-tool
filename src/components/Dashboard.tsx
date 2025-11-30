@@ -8,7 +8,6 @@ export const Dashboard: React.FC = () => {
   const { 
     totalStudiedHours, 
     daysRemaining, 
-    dailyGoalHours,
     todayStudiedHours,
     settings,
     timeRemainingSeconds
