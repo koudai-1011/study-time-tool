@@ -37,6 +37,15 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     }
   }, [elapsed, isRunning, selectedCategory, settings.categories, notificationPermission]);
 
+  // Ensure selectedCategory is valid when categories change (defensive for async load)
+  useEffect(() => {
+    if (!settings?.categories || settings.categories.length === 0) return;
+    const exists = settings.categories.some(c => c.id === selectedCategory);
+    if (!exists) {
+      setSelectedCategory(settings.categories[0].id);
+    }
+  }, [settings.categories]);
+
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = window.setInterval(() => {
@@ -90,7 +99,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       // Close previous notification
       closeNotification();
 
-      const category = settings.categories[selectedCategory];
+      const category = settings.categories?.[selectedCategory] ?? settings.categories?.[0] ?? { name: '未選択', color: '#9CA3AF' };
       const hours = Math.floor(elapsed / 3600);
       const minutes = Math.floor((elapsed % 3600) / 60);
       const seconds = elapsed % 60;
@@ -137,8 +146,8 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           type="button"
           onClick={() => setSelectedCategory(category.id)}
           className={`p-3 rounded-lg transition-all ${selectedCategory === category.id
-              ? 'ring-4 ring-white scale-110'
-              : 'opacity-60 hover:opacity-100'
+            ? 'ring-4 ring-white scale-110'
+            : 'opacity-60 hover:opacity-100'
             }`}
           style={{ backgroundColor: category.color }}
           title={category.name}
@@ -161,7 +170,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
         <div className="text-center w-full max-w-2xl">
           <div className="mb-6">
-            <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories[selectedCategory].name}</p>
+            <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories?.[selectedCategory]?.name ?? settings.categories?.[0]?.name ?? '未選択'}</p>
             <CategorySelector compact />
           </div>
 
