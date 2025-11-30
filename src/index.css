@@ -19,3 +19,26 @@
     @apply bg-slate-50 text-slate-900;
   }
 }
+
+/* Disable text selection globally but allow form controls and elements explicitly opt-in */
+html,
+body,
+#root {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow selection inside inputs, textareas, selects, buttons and elements with .allow-select */
+input,
+textarea,
+select,
+button,
+[contenteditable],
+.allow-select {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
