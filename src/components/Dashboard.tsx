@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
-import { formatTimeJapanese, formatCountdownJapanese, formatDailyGoalRealtime } from '../utils/timeFormat';
+import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 
 export const Dashboard: React.FC = () => {
   const {
@@ -104,7 +104,8 @@ export const Dashboard: React.FC = () => {
           <StatCard
             icon={<Target className="text-blue-500" />}
             label="1日の目標"
-            value={formatDailyGoalRealtime(realtimeDailyGoal, 2)}
+            // リアルタイムで変化する hh時間mm分ss秒 表示にする
+            value={formatTimeJapanese(realtimeDailyGoal)}
             subtext="期限まで"
             color="bg-blue-50"
           />
