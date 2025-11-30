@@ -38,7 +38,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
       opacity: 1,
       scale: 1,
       transition: {
-        type: 'spring',
+        type: 'spring' as const,
         stiffness: 300,
         damping: 30,
       },
