@@ -14,7 +14,7 @@ interface DayDetailModalProps {
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose }) => {
   const { logs, settings, deleteLog, addLog } = useStudy();
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newDuration, setNewDuration] = useState({ hours: 0, minutes: 0 });
+  const [newDuration, setNewDuration] = useState({ hours: '', minutes: '' });
   const [newCategoryId, setNewCategoryId] = useState(0);
 
   const dayLogs = logs.filter(log => {
@@ -30,10 +30,12 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
   };
 
   const handleAddLog = () => {
-    const totalSeconds = (newDuration.hours * 3600) + (newDuration.minutes * 60);
+    const hours = parseInt(String(newDuration.hours)) || 0;
+    const minutes = parseInt(String(newDuration.minutes)) || 0;
+    const totalSeconds = (hours * 3600) + (minutes * 60);
     if (totalSeconds > 0) {
       addLog(totalSeconds, newCategoryId, date);
-      setNewDuration({ hours: 0, minutes: 0 });
+      setNewDuration({ hours: '', minutes: '' });
       setShowAddForm(false);
     }
   };
@@ -41,14 +43,14 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
   const totalDuration = dayLogs.reduce((acc, log) => acc + log.duration, 0);
 
   return (
-    <motion.div 
+    <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
     >
-      <motion.div 
+      <motion.div
         className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -62,7 +64,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
             <h2 className="text-2xl font-bold text-slate-800">
               {format(parseISO(date), 'M月d日（E）', { locale: ja })}
             </h2>
-            <motion.p 
+            <motion.p
               className="text-sm text-slate-500 mt-1"
               key={totalDuration}
               initial={{ opacity: 0, y: -10 }}
@@ -85,7 +87,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
         <div className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="popLayout">
             {dayLogs.length === 0 ? (
-              <motion.div 
+              <motion.div
                 className="text-center py-12"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -137,14 +139,14 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
           {/* Add Log Form */}
           <AnimatePresence>
             {showAddForm ? (
-              <motion.div 
+              <motion.div
                 className="mt-6 p-4 bg-primary-50 rounded-xl"
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
               >
                 <h3 className="font-semibold text-slate-800 mb-4">記録を追加</h3>
-                
+
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -156,11 +158,10 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                           key={category.id}
                           type="button"
                           onClick={() => setNewCategoryId(category.id)}
-                          className={`p-3 rounded-lg transition-all ${
-                            newCategoryId === category.id
+                          className={`p-3 rounded-lg transition-all ${newCategoryId === category.id
                               ? 'ring-4 ring-primary-600'
                               : 'opacity-60 hover:opacity-100'
-                          }`}
+                            }`}
                           style={{ backgroundColor: category.color }}
                           title={category.name}
                           whileHover={{ scale: 1.1 }}
@@ -179,8 +180,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                         type="number"
                         min="0"
                         value={newDuration.hours}
-                        onChange={(e) => setNewDuration(prev => ({ ...prev, hours: parseInt(e.target.value) || 0 }))}
+                        onChange={(e) => setNewDuration(prev => ({ ...prev, hours: e.target.value }))}
                         className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none"
+                        placeholder="例: 1"
                       />
                     </div>
                     <div>
@@ -192,8 +194,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                         min="0"
                         max="59"
                         value={newDuration.minutes}
-                        onChange={(e) => setNewDuration(prev => ({ ...prev, minutes: parseInt(e.target.value) || 0 }))}
+                        onChange={(e) => setNewDuration(prev => ({ ...prev, minutes: e.target.value }))}
                         className="w-full px-3 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none"
+                        placeholder="例: 30"
                       />
                     </div>
                   </div>
