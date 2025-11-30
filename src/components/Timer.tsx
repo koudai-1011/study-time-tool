@@ -29,6 +29,14 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       }
     }
   }, []);
+  
+  // Update notification when elapsed changes
+  useEffect(() => {
+    if (isRunning && elapsed > 0 && elapsed % 10 === 0) {
+      showNotification();
+    }
+  }, [elapsed, isRunning, selectedCategory, settings.categories, notificationPermission]);
+  
   useEffect(() => {
     if (isRunning) {
       intervalRef.current = window.setInterval(() => {
@@ -39,16 +47,9 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       requestWakeLock();
       
       // Show initial notification
-      showNotification();
-      
-      // Update notification every 10 seconds
-      const notificationInterval = window.setInterval(() => {
+      if (elapsed === 0) {
         showNotification();
-      }, 10000);
-      
-      return () => {
-        clearInterval(notificationInterval);
-      };
+      }
     } else {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
