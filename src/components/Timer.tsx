@@ -141,7 +141,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     }
   };
 
-  const showNotification = () => {
+  const showNotification = async () => {
     if (notificationPermission === 'granted' && 'Notification' in window) {
       try {
         // Close previous notification
@@ -157,7 +157,26 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             ? `${minutes}分${seconds}秒`
             : `${seconds}秒`;
 
-        // Notification constructor can throw in some PWA/standalone environments; guard it
+        // First try: service worker notification (supports renotify)
+        if ('serviceWorker' in navigator && navigator.serviceWorker) {
+          try {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg && reg.showNotification) {
+              await reg.showNotification('学習記録 - タイマー実行中', {
+                body: `${category.name}: ${timeText}`,
+                icon: '/vite.svg',
+                tag: 'study-timer',
+                renotify: true,
+                silent: true,
+              });
+              return;
+            }
+          } catch (err) {
+            console.warn('serviceWorker.showNotification failed', err);
+          }
+        }
+
+        // Fallback: in-page Notification (may not update on some platforms/browsers)
         try {
           notificationRef.current = new Notification('学習記録 - タイマー実行中', {
             body: `${category.name}: ${timeText}`,
