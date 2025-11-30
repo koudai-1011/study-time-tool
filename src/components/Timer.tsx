@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { Play, Pause, Square, X } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { formatTime } from '../utils/timeFormat';
@@ -239,60 +240,84 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   if (fullscreen) {
     return (
       <ErrorBoundary onClose={onClose}>
-        <div className="fixed inset-0 z-50 bg-gradient-to-br from-primary-50 via-white to-primary-100 flex flex-col items-center justify-center p-4">
-          <button
+        <motion.div
+          className="fixed inset-0 z-50 bg-gradient-to-br from-primary-50 via-white to-primary-100 flex flex-col items-center justify-center p-4"
+          initial={{ opacity: 0, scale: 0.98, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.98, y: 20 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        >
+          <motion.button
             onClick={onClose}
             className="absolute top-4 right-4 p-3 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { delay: 0.05 } }}
           >
             <X size={24} className="text-slate-600" />
-          </button>
+          </motion.button>
 
           <div className="text-center w-full max-w-2xl">
-            <div className="mb-6">
+            <motion.div className="mb-6" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
               <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories?.[selectedCategory]?.name ?? settings.categories?.[0]?.name ?? '未選択'}</p>
-              <CategorySelector compact />
-            </div>
+              <motion.div initial="hidden" animate="visible" transition={{ delay: 0.08 }}>
+                <CategorySelector compact />
+              </motion.div>
+            </motion.div>
 
-            <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 font-mono tracking-wider mb-8 md:mb-12 tabular-nums">
-              {formatTime(elapsed)}
-            </div>
+            <motion.div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 font-mono tracking-wider mb-8 md:mb-12 tabular-nums"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+            >
+              <motion.span key={elapsed} initial={{ y: 8, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.2 }}>{formatTime(elapsed)}</motion.span>
+            </motion.div>
 
-            <div className="flex items-center gap-4 md:gap-6 justify-center">
+            <motion.div className="flex items-center gap-4 md:gap-6 justify-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
               {!isRunning ? (
-                <button
+                <motion.button
                   onClick={() => setIsRunning(true)}
                   className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-primary-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 text-lg md:text-xl"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <Play fill="currentColor" size={24} className="md:w-8 md:h-8" />
                   開始
-                </button>
+                </motion.button>
               ) : (
-                <button
+                <motion.button
                   onClick={() => setIsRunning(false)}
                   className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 text-lg md:text-xl"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
                   <Pause fill="currentColor" size={24} className="md:w-8 md:h-8" />
                   一時停止
-                </button>
+                </motion.button>
               )}
 
-              <button
+              <motion.button
                 onClick={handleStop}
                 disabled={elapsed === 0}
                 className="bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 md:p-6 rounded-2xl md:rounded-3xl transition-all active:scale-95"
                 title="終了して保存"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <Square fill="currentColor" size={24} className="md:w-8 md:h-8" />
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
 
             {isRunning && (
-              <p className="mt-6 md:mt-8 text-lg md:text-2xl text-primary-600 font-medium animate-pulse">
+              <motion.p className="mt-6 md:mt-8 text-lg md:text-2xl text-primary-600 font-medium"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.12 }}
+              >
                 集中モード中...
-              </p>
+              </motion.p>
             )}
           </div>
-        </div>
+        </motion.div>
       </ErrorBoundary>
     );
   }
