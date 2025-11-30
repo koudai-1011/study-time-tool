@@ -11,7 +11,7 @@ interface DayDetailModalProps {
 }
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose }) => {
-  const { logs, settings, updateLog, deleteLog, addLog } = useStudy();
+  const { logs, settings, deleteLog, addLog } = useStudy();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDuration, setNewDuration] = useState({ hours: 0, minutes: 0 });
   const [newCategoryId, setNewCategoryId] = useState(0);
