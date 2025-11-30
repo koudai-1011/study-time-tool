@@ -47,8 +47,8 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   }, [settings.categories]);
 
   // Error boundary to catch render/runtime errors inside the Timer and show a fallback UI.
-  class ErrorBoundary extends React.Component<{ onClose?: () => void }, { hasError: boolean }> {
-    constructor(props: { onClose?: () => void }) {
+  class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { onClose?: () => void; children?: React.ReactNode }) {
       super(props);
       this.state = { hasError: false };
     }
@@ -89,8 +89,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
         );
       }
 
-      // @ts-ignore - children are valid
-      return this.props.children;
+      return this.props.children as React.ReactElement | null;
     }
   }
 
