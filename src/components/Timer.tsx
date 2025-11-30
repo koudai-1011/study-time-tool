@@ -162,13 +162,16 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           try {
             const reg = await navigator.serviceWorker.getRegistration();
             if (reg && reg.showNotification) {
-              await reg.showNotification('学習記録 - タイマー実行中', {
+              // TypeScript lib may not include 'renotify' in NotificationOptions type
+              // so cast to any to avoid build-time error while still passing the option at runtime.
+              const swOptions: any = {
                 body: `${category.name}: ${timeText}`,
                 icon: '/vite.svg',
                 tag: 'study-timer',
                 renotify: true,
                 silent: true,
-              });
+              };
+              await reg.showNotification('学習記録 - タイマー実行中', swOptions);
               return;
             }
           } catch (err) {
