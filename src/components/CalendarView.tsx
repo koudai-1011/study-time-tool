@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   format, 
   startOfMonth, 
@@ -13,7 +13,6 @@ import {
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
-import { clsx } from 'clsx';
 import { formatTimeJapanese } from '../utils/timeFormat';
 import { DayDetailModal } from './DayDetailModal';
 
@@ -80,22 +79,25 @@ export const CalendarView: React.FC = () => {
           {daysInMonth.map(day => {
             const hours = getStudyTimeForDay(day);
             const hasStudy = hours > 0;
-            const intensity = Math.min(1, hours / 4); // Cap intensity at 4 hours for visual scaling
+            const intensity = Math.min(1, hours / 4);
+            const isToday = isSameDay(day, new Date());
+            const dayLogs = logs.filter(log => isSameDay(parseISO(log.date), day));
+            const categoryColors = [...new Set(dayLogs.map(log => {
+              const category = settings.categories.find(c => c.id === log.categoryId);
+              return category?.color;
+            }))].filter(Boolean);
 
             return (
-              <div 
+              <button 
                 key={day.toISOString()}
-                className={clsx(
-                  "aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all hover:scale-105",
-                  hasStudy ? "bg-primary-50 border-primary-100" : "bg-slate-50 border-slate-100 hover:bg-slate-100",
-                  "border",
-                  isToday ? "ring-2 ring-primary-500" : ""
-                )}
+                onClick={() => setSelectedDate(day.toISOString())}
+                className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all hover:scale-105 border ${
+                  hasStudy ? 'bg-primary-50 border-primary-100' : 'bg-slate-50 border-slate-100 hover:bg-slate-100'
+                } ${isToday ? 'ring-2 ring-primary-500' : ''}`}
               >
-                <span className={clsx(
-                  "text-sm font-medium mb-1",
-                  isToday ? "bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md" : "text-slate-600"
-                )}>
+                <span className={`text-sm font-medium mb-1 ${
+                  isToday ? 'bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md' : 'text-slate-600'
+                }`}>
                   {format(day, 'd')}
                 </span>
 
@@ -104,8 +106,19 @@ export const CalendarView: React.FC = () => {
                     <span className="text-xs font-bold text-primary-600">
                       {formatTimeJapanese(hours)}
                     </span>
+                    {categoryColors.length > 0 && (
+                      <div className="flex gap-0.5 mt-1">
+                        {categoryColors.slice(0, 3).map((color, i) => (
+                          <div
+                            key={i}
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: color as string }}
+                          />
+                        ))}
+                      </div>
+                    )}
                     <div
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-b-2xl opacity-50"
+                      className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-b-2xl"
                       style={{ opacity: 0.2 + (intensity * 0.8) }}
                     />
                   </>
