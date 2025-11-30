@@ -7,20 +7,22 @@ import { CategorySettings } from './CategorySettings';
 export const Settings: React.FC = () => {
   const { settings, updateSettings } = useStudy();
   const { user, signInWithGoogle, logout } = useAuth();
-  const [targetHours, setTargetHours] = useState(settings.targetHours);
+  // Use string state so input can be empty instead of showing 0 initially
+  const [targetHours, setTargetHours] = useState<string>(settings.targetHours > 0 ? String(settings.targetHours) : '');
   const [startDate, setStartDate] = useState(settings.startDate);
   const [endDate, setEndDate] = useState(settings.endDate);
   const [isSaved, setIsSaved] = useState(false);
 
   useEffect(() => {
-    setTargetHours(settings.targetHours);
+    setTargetHours(settings.targetHours > 0 ? String(settings.targetHours) : '');
     setStartDate(settings.startDate);
     setEndDate(settings.endDate);
   }, [settings]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettings({ ...settings, targetHours, startDate, endDate });
+    const parsed = Number(targetHours) || 0;
+    updateSettings({ ...settings, targetHours: parsed, startDate, endDate });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
   };
@@ -28,7 +30,7 @@ export const Settings: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <h2 className="text-3xl font-bold text-slate-800 mb-6">設定</h2>
-      
+
       {/* Login Section */}
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 mb-6">
         <h3 className="text-lg font-bold text-slate-800 mb-4">アカウント</h3>
@@ -76,7 +78,7 @@ export const Settings: React.FC = () => {
               <input
                 type="number"
                 value={targetHours}
-                onChange={(e) => setTargetHours(Number(e.target.value))}
+                onChange={(e) => setTargetHours(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
                 placeholder="例: 1000"
                 min="0"
