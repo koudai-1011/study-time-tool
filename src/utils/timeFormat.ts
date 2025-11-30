@@ -10,7 +10,7 @@ export const formatTimeJapanese = (hours: number): string => {
   const h = Math.floor(totalSeconds / 3600);
   const m = Math.floor((totalSeconds % 3600) / 60);
   const s = totalSeconds % 60;
-  
+
   if (h > 0) {
     return `${h}時間${m}分${s}秒`;
   } else if (m > 0) {
@@ -25,7 +25,7 @@ export const formatCountdownJapanese = (seconds: number): string => {
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
-  
+
   if (days > 0) {
     return `${days}日${hours}時間${minutes}分${secs}秒`;
   } else if (hours > 0) {
@@ -35,4 +35,13 @@ export const formatCountdownJapanese = (seconds: number): string => {
   } else {
     return `${secs}秒`;
   }
+};
+
+// Format realtime daily goal in hours with decimal precision. Uses comma as decimal separator.
+export const formatDailyGoalRealtime = (hours: number, decimals = 2): string => {
+  if (!isFinite(hours) || hours <= 0) return '0時間/日';
+  const fixed = hours.toFixed(decimals);
+  // replace dot with comma for the requested 'コンマ単位' formatting
+  const withComma = fixed.replace('.', ',');
+  return `${withComma}時間/日`;
 };

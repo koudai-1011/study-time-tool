@@ -3,19 +3,19 @@ import { motion } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
-import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
+import { formatTimeJapanese, formatCountdownJapanese, formatDailyGoalRealtime } from '../utils/timeFormat';
 
 export const Dashboard: React.FC = () => {
-  const { 
-    totalStudiedHours, 
-    daysRemaining, 
+  const {
+    totalStudiedHours,
+    daysRemaining,
     todayStudiedHours,
     settings,
     timeRemainingSeconds
   } = useStudy();
 
-  const progress = settings.targetHours > 0 
-    ? Math.min(100, (totalStudiedHours / settings.targetHours) * 100) 
+  const progress = settings.targetHours > 0
+    ? Math.min(100, (totalStudiedHours / settings.targetHours) * 100)
     : 0;
 
   const [fullscreenTimer, setFullscreenTimer] = useState(false);
@@ -35,7 +35,8 @@ export const Dashboard: React.FC = () => {
   const timeUntilEnd = endDateParsed ? Math.max(0, endDateParsed.getTime() - now.getTime()) : 0;
   const hoursUntilEnd = timeUntilEnd / (1000 * 60 * 60);
   const remainingHoursToStudy = Math.max(0, settings.targetHours - totalStudiedHours);
-  const realtimeDailyGoal = hoursUntilEnd > 0 ? remainingHoursToStudy / hoursUntilEnd * 24 : 0;
+  // Real-time daily goal (hours/day) that updates every second as remaining time decreases.
+  const realtimeDailyGoal = hoursUntilEnd > 0 ? (remainingHoursToStudy / hoursUntilEnd) * 24 : 0;
 
   return (
     <>
@@ -60,14 +61,14 @@ export const Dashboard: React.FC = () => {
         </motion.button>
 
         {/* Progress Section */}
-        <motion.div 
+        <motion.div
           className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
           <h3 className="text-lg font-bold text-slate-800 mb-6">全体の進捗</h3>
-          
+
           <div className="relative pt-4">
             <div className="flex mb-2 items-center justify-between">
               <div>
@@ -82,8 +83,8 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
             <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-primary-100">
-              <div 
-                style={{ width: `${progress}%` }} 
+              <div
+                style={{ width: `${progress}%` }}
                 className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-500 transition-all duration-1000 ease-out"
               ></div>
             </div>
@@ -94,34 +95,34 @@ export const Dashboard: React.FC = () => {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div 
+        <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, staggerChildren: 0.1 }}
         >
-          <StatCard 
+          <StatCard
             icon={<Target className="text-blue-500" />}
             label="1日の目標"
-            value={formatTimeJapanese(realtimeDailyGoal)}
+            value={formatDailyGoalRealtime(realtimeDailyGoal, 2)}
             subtext="期限まで"
             color="bg-blue-50"
           />
-          <StatCard 
+          <StatCard
             icon={<Clock className="text-emerald-500" />}
             label="今日の学習"
             value={formatTimeJapanese(todayStudiedHours)}
             subtext="今日の合計"
             color="bg-emerald-50"
           />
-          <StatCard 
+          <StatCard
             icon={<TrendingUp className="text-violet-500" />}
             label="総学習時間"
             value={formatTimeJapanese(totalStudiedHours)}
             subtext={`目標 ${settings.targetHours}時間`}
             color="bg-violet-50"
           />
-          <StatCard 
+          <StatCard
             icon={<Calendar className="text-amber-500" />}
             label="残り時間"
             value={`${daysRemaining}日`}
@@ -140,14 +141,14 @@ export const Dashboard: React.FC = () => {
 };
 
 const StatCard = ({ icon, label, value, subtext, color }: { icon: React.ReactNode, label: string, value: string, subtext: string, color: string }) => (
-  <motion.div 
+  <motion.div
     className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
     whileHover={{ scale: 1.05, y: -5 }}
     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
   >
-    <motion.div 
+    <motion.div
       className={`w-12 h-12 rounded-xl ${color} flex items-center justify-center mb-4`}
       whileHover={{ rotate: 360 }}
       transition={{ duration: 0.6 }}
@@ -155,7 +156,7 @@ const StatCard = ({ icon, label, value, subtext, color }: { icon: React.ReactNod
       {icon}
     </motion.div>
     <p className="text-slate-500 text-sm font-medium">{label}</p>
-    <motion.h3 
+    <motion.h3
       className="text-2xl font-bold text-slate-800 mt-1"
       key={value}
       initial={{ opacity: 0, scale: 0.5 }}
