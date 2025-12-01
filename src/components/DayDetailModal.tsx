@@ -12,7 +12,7 @@ interface DayDetailModalProps {
 }
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose }) => {
-  const { logs, settings, deleteLog, addLog } = useStudy();
+  const { logs, settings, deleteLog, addLog, updateLog } = useStudy();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDuration, setNewDuration] = useState({ hours: '', minutes: '' });
   const [newCategoryId, setNewCategoryId] = useState(0);
@@ -115,7 +115,19 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                         whileHover={{ scale: 1.1, rotate: 5 }}
                       />
                       <div className="flex-1">
-                        <p className="font-semibold text-slate-800">{category?.name}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <select
+                            value={log.categoryId}
+                            onChange={(e) => updateLog(log.id, { categoryId: Number(e.target.value) })}
+                            className="font-semibold text-slate-800 bg-transparent border border-slate-200 rounded-lg px-3 py-1 hover:border-primary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none cursor-pointer"
+                          >
+                            {settings.categories.map(cat => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                         <p className="text-sm text-slate-500">
                           {formatTimeJapanese(log.duration / 3600)}
                         </p>

@@ -122,6 +122,26 @@ export const Settings: React.FC = () => {
             </p>
           </div>
 
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              デフォルトカテゴリ
+            </label>
+            <select
+              value={settings.defaultCategoryId ?? 0}
+              onChange={(e) => updateSettings({ ...settings, defaultCategoryId: Number(e.target.value) })}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
+            >
+              {settings.categories.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-2 text-sm text-slate-500">
+              タイマー起動時に初期選択されるカテゴリを設定してください。
+            </p>
+          </div>
+
           <div className="pt-4">
             <button
               type="submit"

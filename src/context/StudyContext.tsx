@@ -22,6 +22,7 @@ interface Settings {
   startDate: string; // ISO string (YYYY-MM-DD)
   endDate: string; // ISO string (YYYY-MM-DD)
   categories: Category[];
+  defaultCategoryId?: number;
 }
 
 interface StudyContextType {

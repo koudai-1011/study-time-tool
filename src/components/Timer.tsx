@@ -60,8 +60,9 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   const { addLog, settings } = useStudy();
   const [isRunning, setIsRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState(settings.defaultCategoryId ?? 0);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [startTime, setStartTime] = useState<number | null>(null);
   const intervalRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const notificationRef = useRef<Notification | null>(null);
@@ -97,8 +98,16 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
   useEffect(() => {
     if (isRunning) {
+      // Set start time based on current elapsed (for resume support)
+      if (!startTime) {
+        setStartTime(Date.now() - (elapsed * 1000));
+      }
+      
+      // Use timestamp-based calculation to avoid setInterval delays in background
       intervalRef.current = window.setInterval(() => {
-        setElapsed((prev) => prev + 1);
+        const now = Date.now();
+        const actualElapsed = Math.floor((now - (startTime || now)) / 1000);
+        setElapsed(actualElapsed);
       }, 1000);
 
       // Request wake lock
@@ -109,6 +118,9 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
         showNotification();
       }
     } else {
+      // Clear start time when stopped
+      setStartTime(null);
+      
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
@@ -122,7 +134,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       releaseWakeLock();
       closeNotification();
     };
-  }, [isRunning]);
+  }, [isRunning, startTime]);
 
   const requestWakeLock = async () => {
     try {
