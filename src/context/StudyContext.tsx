@@ -10,7 +10,7 @@ interface StudyContextType {
   settings: Settings;
   logs: StudyLog[];
   updateSettings: (newSettings: Settings) => void;
-  addLog: (duration: number, categoryId: number, date?: string) => void;
+  addLog: (duration: number, categoryId: number, endDate?: string) => void;
   updateLog: (logId: string, updates: Partial<StudyLog>) => void;
   deleteLog: (logId: string) => void;
   totalStudiedHours: number;
@@ -46,14 +46,48 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setSettings(newSettings);
   };
 
-  const addLog = (duration: number, categoryId: number, date: string = new Date().toISOString()) => {
-    const newLog: StudyLog = {
-      id: crypto.randomUUID(),
-      date,
-      duration,
-      categoryId,
-    };
-    setLogs((prev) => [...prev, newLog]);
+  const addLog = (duration: number, categoryId: number, endDate?: string) => {
+    const endTime = endDate ? new Date(endDate) : new Date();
+    const startTime = new Date(endTime.getTime() - duration * 1000);
+    
+    // Check if the session crosses midnight
+    const startDay = new Date(startTime.getFullYear(), startTime.getMonth(), startTime.getDate());
+    const endDay = new Date(endTime.getFullYear(), endTime.getMonth(), endTime.getDate());
+    
+    if (startDay.getTime() === endDay.getTime()) {
+      // Same day - create single log
+      const newLog: StudyLog = {
+        id: crypto.randomUUID(),
+        date: endTime.toISOString(),
+        duration,
+        categoryId,
+      };
+      setLogs((prev) => [...prev, newLog]);
+    } else {
+      // Crosses midnight - split into multiple logs
+      const logs: StudyLog[] = [];
+      let currentStart = new Date(startTime);
+      
+      while (currentStart < endTime) {
+        const currentDayEnd = new Date(currentStart.getFullYear(), currentStart.getMonth(), currentStart.getDate(), 23, 59, 59, 999);
+        const segmentEnd = currentDayEnd < endTime ? currentDayEnd : endTime;
+        const segmentDuration = Math.floor((segmentEnd.getTime() - currentStart.getTime()) / 1000);
+        
+        if (segmentDuration > 0) {
+          logs.push({
+            id: crypto.randomUUID(),
+            date: segmentEnd.toISOString(),
+            duration: segmentDuration,
+            categoryId,
+          });
+        }
+        
+        // Move to next day
+        currentStart = new Date(currentStart.getFullYear(), currentStart.getMonth(), currentStart.getDate() + 1, 0, 0, 0, 0);
+      }
+      
+      setLogs((prev) => [...prev, ...logs]);
+    }
   };
 
   const updateLog = (logId: string, updates: Partial<StudyLog>) => {
