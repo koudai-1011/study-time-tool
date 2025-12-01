@@ -299,7 +299,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             <X size={24} className="text-slate-600" />
           </button>
 
-          <div className="text-center w-full max-w-2xl">
+          <div className="text-center w-full">
             <div className="mb-6">
               <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories?.[selectedCategory]?.name ?? settings.categories?.[0]?.name ?? '未選択'}</p>
               <div>
