@@ -1,8 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Pause, Square, X } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { formatTime } from '../utils/timeFormat';
+import { useTimer } from '../hooks/useTimer';
+import { useWakeLock } from '../hooks/useWakeLock';
+import { useNotification } from '../hooks/useNotification';
 
 interface TimerProps {
   fullscreen?: boolean;
@@ -21,32 +24,30 @@ class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: R
   }
 
   componentDidCatch(error: unknown, info: unknown) {
-    console.error('ErrorBoundary caught error in Timer:', error, info);
+    console.error("Timer ErrorBoundary caught an error", error, info);
   }
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">
-          <div className="max-w-md w-full text-center">
-            <p className="text-lg font-bold text-slate-800 mb-4">タイマーを表示できませんでした</p>
-            <p className="text-sm text-slate-500 mb-6">環境によってはアプリ化（PWA）で一部機能が制限されています。ページを再読み込みするか、アプリを再起動してください。</p>
-            <div className="flex justify-center gap-4">
+        <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-4">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">エラーが発生しました</h2>
+          <p className="text-slate-600 mb-6">タイマーの表示中に問題が発生しました。</p>
+          <div className="flex gap-4">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-primary-600 text-white rounded-xl font-bold"
+            >
+              再読み込み
+            </button>
+            {this.props.onClose && (
               <button
-                onClick={() => window.location.reload()}
-                className="bg-primary-600 text-white px-4 py-2 rounded-lg"
+                onClick={this.props.onClose}
+                className="px-6 py-3 bg-slate-200 text-slate-700 rounded-xl font-bold"
               >
-                再読み込み
+                閉じる
               </button>
-              {this.props.onClose && (
-                <button
-                  onClick={this.props.onClose}
-                  className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg"
-                >
-                  閉じる
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       );
@@ -58,189 +59,77 @@ class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: R
 
 export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => {
   const { addLog, settings } = useStudy();
-  const [isRunning, setIsRunning] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [selectedCategory, setSelectedCategory] = useState(settings.defaultCategoryId ?? 0);
+  const { 
+    isRunning, 
+    elapsed, 
+    selectedCategory, 
+    setSelectedCategory, 
+    start, 
+    stop, 
+    reset,
+    startTime 
+  } = useTimer(settings.defaultCategoryId ?? 0);
+  
+  const { requestWakeLock, releaseWakeLock } = useWakeLock();
+  const { requestPermission, showNotification, closeNotification } = useNotification();
+  
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null);
-  const intervalRef = useRef<number | null>(null);
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
-  const notificationRef = useRef<Notification | null>(null);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
 
-  // Request notification permission on mount
+  // Request notification permission on start (user gesture)
+  const handleStart = async () => {
+    await requestPermission();
+    start();
+  };
+
+  // Handle side effects (WakeLock, Notification)
   useEffect(() => {
-    if ('Notification' in window) {
-      setNotificationPermission(Notification.permission);
-      if (Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
-          setNotificationPermission(permission);
-        });
+    if (isRunning) {
+      requestWakeLock();
+      
+      // Show initial notification
+      if (elapsed === 0 || elapsed % 10 === 0) { // Update periodically or on start
+         const category = settings.categories.find(c => c.id === selectedCategory) || settings.categories[0];
+         // Calculate start time for the timestamp if not available from hook (fallback)
+         const currentStartTime = startTime || (Date.now() - (elapsed * 1000));
+         
+         showNotification('学習記録', {
+           body: `${category.name}で学習中...`,
+           icon: '/vite.svg',
+           tag: 'study-timer',
+           renotify: false,
+           silent: true,
+           timestamp: currentStartTime,
+         });
       }
+    } else {
+      releaseWakeLock();
+      closeNotification();
     }
-  }, []);
+  }, [isRunning, elapsed, selectedCategory, settings.categories, requestWakeLock, releaseWakeLock, showNotification, closeNotification, startTime]);
 
-  // Update notification when elapsed changes
-  useEffect(() => {
-    if (isRunning && elapsed > 0 && elapsed % 10 === 0) {
-      showNotification();
-    }
-  }, [elapsed, isRunning, selectedCategory, settings.categories, notificationPermission]);
-
-  // Ensure selectedCategory is valid when categories change (defensive for async load)
+  // Ensure selectedCategory is valid
   useEffect(() => {
     if (!settings?.categories || settings.categories.length === 0) return;
     const exists = settings.categories.some(c => c.id === selectedCategory);
     if (!exists) {
       setSelectedCategory(settings.categories[0].id);
     }
-  }, [settings.categories]);
-
-  useEffect(() => {
-    if (isRunning) {
-      // Set start time based on current elapsed (for resume support)
-      if (!startTime) {
-        setStartTime(Date.now() - (elapsed * 1000));
-      }
-      
-      // Use timestamp-based calculation to avoid setInterval delays in background
-      intervalRef.current = window.setInterval(() => {
-        const now = Date.now();
-        const actualElapsed = Math.floor((now - (startTime || now)) / 1000);
-        setElapsed(actualElapsed);
-      }, 1000);
-
-      // Request wake lock
-      requestWakeLock();
-
-      // Show initial notification
-      if (elapsed === 0) {
-        showNotification();
-      }
-    } else {
-      // Clear start time when stopped
-      setStartTime(null);
-      
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
-      // Release wake lock
-      releaseWakeLock();
-      // Close notification
-      closeNotification();
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      releaseWakeLock();
-      closeNotification();
-    };
-  }, [isRunning, startTime]);
-
-  const requestWakeLock = async () => {
-    try {
-      if ('wakeLock' in navigator) {
-        wakeLockRef.current = await navigator.wakeLock.request('screen');
-        console.log('Wake Lock activated');
-      }
-    } catch (err) {
-      console.error('Wake Lock error:', err);
-    }
-  };
-
-  // No animation: simple display to avoid jank
-
-  const releaseWakeLock = async () => {
-    if (wakeLockRef.current) {
-      await wakeLockRef.current.release();
-      wakeLockRef.current = null;
-      console.log('Wake Lock released');
-    }
-  };
-
-  const handleStart = async () => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      const permission = await Notification.requestPermission();
-      setNotificationPermission(permission);
-    }
-    setIsRunning(true);
-  };
-
-  const showNotification = async () => {
-    if (notificationPermission === 'granted' && isRunning) {
-      try {
-        const category = settings.categories.find(c => c.id === selectedCategory) || settings.categories[0];
-        // Calculate start time for the timestamp
-        // If we have a tracked startTime, use it. Otherwise calculate from elapsed.
-        const currentStartTime = startTime || (Date.now() - (elapsed * 1000));
-
-        // Try Service Worker first (for background persistence)
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          try {
-            const reg = await navigator.serviceWorker.ready;
-            if (reg && reg.showNotification) {
-              // TypeScript lib may not include 'renotify' in NotificationOptions type
-              // so cast to any to avoid build-time error while still passing the option at runtime.
-              const swOptions: any = {
-                body: `${category.name}で学習中...`,
-                icon: '/vite.svg',
-                tag: 'study-timer',
-                renotify: false, // Don't vibrate/sound on update
-                silent: true,
-                timestamp: currentStartTime, // OS will show "X min ago"
-              };
-              await reg.showNotification('学習記録', swOptions);
-              return;
-            }
-          } catch (err) {
-            console.warn('serviceWorker.showNotification failed', err);
-          }
-        }
-
-        // Fallback: in-page Notification (may not update on some platforms/browsers)
-        try {
-          notificationRef.current = new Notification('学習記録', {
-            body: `${category.name}で学習中...`,
-            icon: '/vite.svg',
-            tag: 'study-timer',
-            requireInteraction: false,
-            silent: true,
-            timestamp: currentStartTime,
-          } as any);
-        } catch (err) {
-          console.warn('Notification creation failed (likely unsupported in this environment)', err);
-        }
-      } catch (err) {
-        console.error('showNotification error:', err);
-      }
-    } else if (notificationPermission !== 'granted') {
-      console.warn('Notification permission not granted:', notificationPermission);
-    }
-  };
-
-  const closeNotification = () => {
-    if (notificationRef.current) {
-      notificationRef.current.close();
-      notificationRef.current = null;
-    }
-  };
+  }, [settings.categories, selectedCategory, setSelectedCategory]);
 
   const handleStop = () => {
     if (elapsed > 0) {
       addLog(elapsed, selectedCategory);
-      setElapsed(0);
     }
-    setIsRunning(false);
-    closeNotification();
-    if (fullscreen && onClose) {
-      onClose();
-    }
+    reset();
+    if (onClose) onClose();
   };
 
   const handleCloseClick = () => {
     if (elapsed > 0) {
+      stop(); // Pause timer
       setShowConfirmModal(true);
     } else {
-      onClose?.();
+      if (onClose) onClose();
     }
   };
 
@@ -250,11 +139,9 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   };
 
   const handleDiscardAndClose = () => {
-    setElapsed(0);
-    setIsRunning(false);
-    closeNotification();
+    reset();
+    if (onClose) onClose();
     setShowConfirmModal(false);
-    onClose?.();
   };
 
   const CategorySelector = ({ compact = false }: { compact?: boolean }) => (
@@ -301,7 +188,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
           <div className="text-center w-full">
             <div className="mb-6">
-              <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories?.[selectedCategory]?.name ?? settings.categories?.[0]?.name ?? '未選択'}</p>
+              <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories.find(c => c.id === selectedCategory)?.name ?? '未選択'}</p>
               <div>
                 <CategorySelector compact />
               </div>
@@ -322,7 +209,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
                 </button>
               ) : (
                 <button
-                  onClick={() => setIsRunning(false)}
+                  onClick={stop}
                   className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 text-lg md:text-xl"
                 >
                   <Pause fill="currentColor" size={24} className="md:w-8 md:h-8" />
@@ -360,19 +247,19 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
                 <div className="space-y-3">
                   <button
                     onClick={handleSaveAndClose}
-                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-primary-600/30 transition-all active:scale-95"
+                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl transition-colors"
                   >
                     保存して閉じる
                   </button>
                   <button
                     onClick={handleDiscardAndClose}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-4 px-6 rounded-2xl transition-all active:scale-95"
+                    className="w-full bg-red-100 hover:bg-red-200 text-red-600 font-bold py-3 rounded-xl transition-colors"
                   >
                     保存せずに閉じる
                   </button>
                   <button
                     onClick={() => setShowConfirmModal(false)}
-                    className="w-full bg-white hover:bg-slate-50 text-slate-600 font-medium py-4 px-6 rounded-2xl border-2 border-slate-200 transition-all active:scale-95"
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-colors"
                   >
                     キャンセル
                   </button>
