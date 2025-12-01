@@ -22,7 +22,7 @@ interface GroupedLog {
 }
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose }) => {
-  const { logs, settings, deleteLog, addLog, setIsSwipeEnabled } = useStudy();
+  const { logs, settings, deleteLog, addLog, updateLog, setIsSwipeEnabled } = useStudy();
   
   // Disable global swipe navigation when modal is open
   useEffect(() => {
@@ -34,6 +34,9 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
   const [newDuration, setNewDuration] = useState({ hours: '', minutes: '' });
   const [newCategoryId, setNewCategoryId] = useState(0);
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editCategory, setEditCategory] = useState<number>(0);
+  const [editTime, setEditTime] = useState<{ hours: number; minutes: number }>({ hours: 0, minutes: 0 });
 
   const dayLogs = logs.filter(log => {
     const logDate = parseISO(log.date).toDateString();
@@ -92,21 +95,61 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
     const minutes = parseInt(String(newDuration.minutes)) || 0;
     const totalSeconds = (hours * 3600) + (minutes * 60);
     if (totalSeconds > 0) {
-      // Create end time as end of the selected day
+      // Use current time or end of day if current time is not on the selected date
       const selectedDate = parseISO(date);
-      const endTime = new Date(
-        selectedDate.getFullYear(),
-        selectedDate.getMonth(),
-        selectedDate.getDate(),
-        23,
-        59,
-        59,
-        999
-      );
+      const now = new Date();
+      const isToday = now.toDateString() === selectedDate.toDateString();
+      
+      const endTime = isToday 
+        ? now  // Current time for today
+        : new Date(  // End of day for past dates
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            selectedDate.getDate(),
+            23,
+            59,
+            59,
+            999
+          );
+      
       addLog(totalSeconds, newCategoryId, endTime.toISOString());
       setNewDuration({ hours: '', minutes: '' });
       setShowAddForm(false);
     }
+  };
+
+  const handleStartEdit = (log: StudyLog) => {
+    setEditingLogId(log.id);
+    setEditCategory(log.categoryId);
+    const logTime = parseISO(log.date);
+    const endTime = new Date(logTime.getTime());
+    const hours = Math.floor(endTime.getHours());
+    const minutes = Math.floor(endTime.getMinutes());
+    setEditTime({ hours, minutes });
+  };
+
+  const handleSaveEdit = (logId: string, duration: number) => {
+    const selectedDate = parseISO(date);
+    const newEndTime = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+      editTime.hours,
+      editTime.minutes,
+      0,
+      0
+    );
+    
+    updateLog(logId, {
+      categoryId: editCategory,
+      date: newEndTime.toISOString(),
+      duration: duration
+    });
+    setEditingLogId(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingLogId(null);
   };
 
   const totalDuration = dayLogs.reduce((acc, log) => acc + log.duration, 0);
@@ -225,40 +268,126 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                               const endTime = new Date(logTime.getTime());
                               const startTime = new Date(endTime.getTime() - log.duration * 1000);
                               
-                              return (
-                                <motion.div
-                                  key={log.id}
-                                  className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors"
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  exit={{ opacity: 0, x: 10 }}
-                                  transition={{ delay: logIndex * 0.03 }}
-                                >
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                                      <span className="font-medium">
-                                        {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
-                                      </span>
-                                      <span className="text-slate-400">•</span>
-                                      <span className="text-slate-500">
-                                        {formatTimeJapanese(log.duration / 3600)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <motion.button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDelete(log.id);
-                                    }}
-                                    className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                                    title="削除"
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
+                                return (
+                                  <motion.div
+                                    key={log.id}
+                                    className="bg-white border border-slate-200 rounded-lg overflow-hidden"
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 10 }}
+                                    transition={{ delay: logIndex * 0.03 }}
+                                    layout
                                   >
-                                    <Trash2 size={16} />
-                                  </motion.button>
-                                </motion.div>
-                              );
+                                    {/* Log Display / Edit Mode */}
+                                    {editingLogId === log.id ? (
+                                      /* Edit Mode */
+                                      <div className="p-4 space-y-4 bg-slate-50">
+                                        {/* Category Selection */}
+                                        <div>
+                                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            カテゴリ
+                                          </label>
+                                          <select
+                                            value={editCategory}
+                                            onChange={(e) => setEditCategory(parseInt(e.target.value))}
+                                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                          >
+                                            {settings.categories.map((cat) => (
+                                              <option key={cat.id} value={cat.id}>
+                                                {cat.name}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        </div>
+
+                                        {/* Time Selection */}
+                                        <div>
+                                          <label className="block text-sm font-medium text-slate-700 mb-2">
+                                            終了時刻
+                                          </label>
+                                          <div className="flex gap-2">
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              max="23"
+                                              value={editTime.hours}
+                                              onChange={(e) => setEditTime({ ...editTime, hours: parseInt(e.target.value) || 0 })}
+                                              className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                              placeholder="時"
+                                            />
+                                            <input
+                                              type="number"
+                                              min="0"
+                                              max="59"
+                                              value={editTime.minutes}
+                                              onChange={(e) => setEditTime({ ...editTime, minutes: parseInt(e.target.value) || 0 })}
+                                              className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                              placeholder="分"
+                                            />
+                                          </div>
+                                        </div>
+
+                                        {/* Save/Cancel Buttons */}
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={() => handleSaveEdit(log.id, log.duration)}
+                                            className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                                          >
+                                            保存
+                                          </button>
+                                          <button
+                                            onClick={handleCancelEdit}
+                                            className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+                                          >
+                                            キャンセル
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      /* Display Mode */
+                                      <div className="flex items-center gap-3 p-3 hover:bg-slate-50 transition-colors">
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2 text-sm text-slate-600">
+                                            <span className="font-medium">
+                                              {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                                            </span>
+                                            <span className="text-slate-400">•</span>
+                                            <span className="text-slate-500">
+                                              {formatTimeJapanese(log.duration / 3600)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        <motion.button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStartEdit(log);
+                                          }}
+                                          className="p-2 rounded-lg hover:bg-blue-50 text-blue-600 transition-colors"
+                                          title="編集"
+                                          whileHover={{ scale: 1.1 }}
+                                          whileTap={{ scale: 0.9 }}
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                          </svg>
+                                        </motion.button>
+                                        <motion.button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDelete(log.id);
+                                          }}
+                                          className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                                          title="削除"
+                                          whileHover={{ scale: 1.1 }}
+                                          whileTap={{ scale: 0.9 }}
+                                        >
+                                          <Trash2 size={16} />
+                                        </motion.button>
+                                      </div>
+                                    )}
+                                  </motion.div>
+                                );
                             })}
                           </motion.div>
                         )}
