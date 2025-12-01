@@ -20,6 +20,8 @@ interface StudyContextType {
   todayStudiedHours: number;
   timeRemainingSeconds: number;
   getCategoryLogs: (date: string) => { category: Category; duration: number }[];
+  isSwipeEnabled: boolean;
+  setIsSwipeEnabled: (enabled: boolean) => void;
 }
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
@@ -27,6 +29,7 @@ const StudyContext = createContext<StudyContextType | undefined>(undefined);
 export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { settings, logs, setSettings, setLogs, DEFAULT_CATEGORIES } = useStudyData(user);
+  const [isSwipeEnabled, setIsSwipeEnabled] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every second for real-time countdown
@@ -120,6 +123,8 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       todayStudiedHours,
       timeRemainingSeconds,
       getCategoryLogs,
+      isSwipeEnabled,
+      setIsSwipeEnabled,
     }}>
       {children}
     </StudyContext.Provider>

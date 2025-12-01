@@ -58,7 +58,7 @@ class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: R
 }
 
 export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => {
-  const { addLog, settings } = useStudy();
+  const { addLog, settings, setIsSwipeEnabled } = useStudy();
   const { 
     isRunning, 
     elapsed, 
@@ -74,6 +74,14 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   const { requestPermission, showNotification, closeNotification } = useNotification();
   
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Disable global swipe navigation when timer is fullscreen
+  useEffect(() => {
+    if (fullscreen) {
+      setIsSwipeEnabled(false);
+      return () => setIsSwipeEnabled(true);
+    }
+  }, [fullscreen, setIsSwipeEnabled]);
 
   // Request notification permission on start (user gesture)
   const handleStart = async () => {
@@ -99,7 +107,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
            renotify: false,
            silent: true,
            timestamp: currentStartTime,
-         });
+         } as any);
       }
     } else {
       releaseWakeLock();
@@ -286,7 +294,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
         <div className="flex items-center gap-4 w-full max-w-xs">
           {!isRunning ? (
             <button
-              onClick={() => setIsRunning(true)}
+              onClick={handleStart}
               className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-2xl shadow-lg shadow-primary-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <Play fill="currentColor" size={20} className="md:w-6 md:h-6" />
@@ -294,7 +302,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             </button>
           ) : (
             <button
-              onClick={() => setIsRunning(false)}
+              onClick={stop}
               className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 px-6 md:py-4 md:px-8 rounded-2xl shadow-lg shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               <Pause fill="currentColor" size={20} className="md:w-6 md:h-6" />

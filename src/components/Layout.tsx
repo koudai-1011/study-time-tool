@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, Calendar, Settings as SettingsIcon, Clock } from 'lucide-react';
+import { useStudy } from '../context/StudyContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -10,6 +11,7 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
+  const { isSwipeEnabled } = useStudy();
   const tabs: Array<'dashboard' | 'calendar' | 'settings'> = ['dashboard', 'calendar', 'settings'];
   const currentIndex = tabs.indexOf(activeTab);
   const prevIndexRef = useRef<number>(currentIndex);
@@ -22,12 +24,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
-      if (currentIndex < tabs.length - 1) {
+      if (isSwipeEnabled && currentIndex < tabs.length - 1) {
         onTabChange(tabs[currentIndex + 1]);
       }
     },
     onSwipedRight: () => {
-      if (currentIndex > 0) {
+      if (isSwipeEnabled && currentIndex > 0) {
         onTabChange(tabs[currentIndex - 1]);
       }
     },
