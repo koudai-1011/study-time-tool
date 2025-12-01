@@ -158,36 +158,29 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   };
 
   const showNotification = async () => {
-    if (notificationPermission === 'granted' && 'Notification' in window) {
+    if (notificationPermission === 'granted' && isRunning) {
       try {
-        // Close previous notification
-        closeNotification();
+        const category = settings.categories.find(c => c.id === selectedCategory) || settings.categories[0];
+        // Calculate start time for the timestamp
+        // If we have a tracked startTime, use it. Otherwise calculate from elapsed.
+        const currentStartTime = startTime || (Date.now() - (elapsed * 1000));
 
-        const category = settings.categories?.[selectedCategory] ?? settings.categories?.[0] ?? { name: '未選択', color: '#9CA3AF' };
-        const hours = Math.floor(elapsed / 3600);
-        const minutes = Math.floor((elapsed % 3600) / 60);
-        const seconds = elapsed % 60;
-        const timeText = hours > 0
-          ? `${hours}時間${minutes}分${seconds}秒`
-          : minutes > 0
-            ? `${minutes}分${seconds}秒`
-            : `${seconds}秒`;
-
-        // First try: service worker notification (supports renotify)
-        if ('serviceWorker' in navigator && navigator.serviceWorker) {
+        // Try Service Worker first (for background persistence)
+        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           try {
-            const reg = await navigator.serviceWorker.getRegistration();
+            const reg = await navigator.serviceWorker.ready;
             if (reg && reg.showNotification) {
               // TypeScript lib may not include 'renotify' in NotificationOptions type
               // so cast to any to avoid build-time error while still passing the option at runtime.
               const swOptions: any = {
-                body: `${category.name}: ${timeText}`,
+                body: `${category.name}で学習中...`,
                 icon: '/vite.svg',
                 tag: 'study-timer',
-                renotify: true,
+                renotify: false, // Don't vibrate/sound on update
                 silent: true,
+                timestamp: currentStartTime, // OS will show "X min ago"
               };
-              await reg.showNotification('学習記録 - タイマー実行中', swOptions);
+              await reg.showNotification('学習記録', swOptions);
               return;
             }
           } catch (err) {
@@ -197,13 +190,14 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
         // Fallback: in-page Notification (may not update on some platforms/browsers)
         try {
-          notificationRef.current = new Notification('学習記録 - タイマー実行中', {
-            body: `${category.name}: ${timeText}`,
+          notificationRef.current = new Notification('学習記録', {
+            body: `${category.name}で学習中...`,
             icon: '/vite.svg',
             tag: 'study-timer',
             requireInteraction: false,
             silent: true,
-          });
+            timestamp: currentStartTime,
+          } as any);
         } catch (err) {
           console.warn('Notification creation failed (likely unsupported in this environment)', err);
         }
