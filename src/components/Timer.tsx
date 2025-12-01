@@ -258,7 +258,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   };
 
   const CategorySelector = ({ compact = false }: { compact?: boolean }) => (
-    <div className={`grid ${compact ? 'grid-cols-5' : 'grid-cols-5'} gap-2 ${compact ? '' : 'mb-4'}`}>
+    <div className={`grid ${compact ? 'grid-cols-5' : 'grid-cols-5'} gap-2 ${compact ? '' : 'mb-4'} justify-center mx-auto max-w-md`}>
       {settings.categories.map(category => (
         <button
           key={category.id}
