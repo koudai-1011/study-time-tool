@@ -84,7 +84,18 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
     const minutes = parseInt(String(newDuration.minutes)) || 0;
     const totalSeconds = (hours * 3600) + (minutes * 60);
     if (totalSeconds > 0) {
-      addLog(totalSeconds, newCategoryId, date);
+      // Create end time as end of the selected day
+      const selectedDate = parseISO(date);
+      const endTime = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        23,
+        59,
+        59,
+        999
+      );
+      addLog(totalSeconds, newCategoryId, endTime.toISOString());
       setNewDuration({ hours: '', minutes: '' });
       setShowAddForm(false);
     }
