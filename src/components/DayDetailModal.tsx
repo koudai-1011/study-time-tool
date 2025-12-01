@@ -36,7 +36,8 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [editCategory, setEditCategory] = useState<number>(0);
-  const [editTime, setEditTime] = useState<{ hours: number; minutes: number }>({ hours: 0, minutes: 0 });
+  const [editDuration, setEditDuration] = useState<{ hours: string; minutes: string }>({ hours: '', minutes: '' });
+  const [editStartTime, setEditStartTime] = useState<{ hours: number; minutes: number }>({ hours: 0, minutes: 0 });
 
   const dayLogs = logs.filter(log => {
     const logDate = parseISO(log.date).toDateString();
@@ -121,29 +122,51 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
   const handleStartEdit = (log: StudyLog) => {
     setEditingLogId(log.id);
     setEditCategory(log.categoryId);
+    
+    // Calculate start and end time
     const logTime = parseISO(log.date);
     const endTime = new Date(logTime.getTime());
-    const hours = Math.floor(endTime.getHours());
-    const minutes = Math.floor(endTime.getMinutes());
-    setEditTime({ hours, minutes });
+    const startTime = new Date(endTime.getTime() - log.duration * 1000);
+    
+    // Set start time
+    setEditStartTime({
+      hours: startTime.getHours(),
+      minutes: startTime.getMinutes()
+    });
+    
+    // Set duration
+    const durationHours = Math.floor(log.duration / 3600);
+    const durationMinutes = Math.floor((log.duration % 3600) / 60);
+    setEditDuration({
+      hours: String(durationHours),
+      minutes: String(durationMinutes)
+    });
   };
 
-  const handleSaveEdit = (logId: string, duration: number) => {
+  const handleSaveEdit = (logId: string) => {
     const selectedDate = parseISO(date);
-    const newEndTime = new Date(
+    
+    // Calculate new end time from start time + duration
+    const hours = parseInt(String(editDuration.hours)) || 0;
+    const minutes = parseInt(String(editDuration.minutes)) || 0;
+    const totalSeconds = (hours * 3600) + (minutes * 60);
+    
+    const newStartTime = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
       selectedDate.getDate(),
-      editTime.hours,
-      editTime.minutes,
+      editStartTime.hours,
+      editStartTime.minutes,
       0,
       0
     );
     
+    const newEndTime = new Date(newStartTime.getTime() + totalSeconds * 1000);
+    
     updateLog(logId, {
       categoryId: editCategory,
       date: newEndTime.toISOString(),
-      duration: duration
+      duration: totalSeconds
     });
     setEditingLogId(null);
   };
@@ -281,66 +304,138 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                                     {/* Log Display / Edit Mode */}
                                     {editingLogId === log.id ? (
                                       /* Edit Mode */
-                                      <div className="p-4 space-y-4 bg-slate-50">
+                                      <div className="p-6 space-y-6 bg-gradient-to-br from-slate-50 to-white">
+                                        <h4 className="font-semibold text-slate-800 text-lg">記録を編集</h4>
+
                                         {/* Category Selection */}
                                         <div>
                                           <label className="block text-sm font-medium text-slate-700 mb-2">
-                                            カテゴリ
+                                            カテゴリー
                                           </label>
-                                          <select
-                                            value={editCategory}
-                                            onChange={(e) => setEditCategory(parseInt(e.target.value))}
-                                            className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
-                                          >
-                                            {settings.categories.map((cat) => (
-                                              <option key={cat.id} value={cat.id}>
-                                                {cat.name}
-                                              </option>
+                                          <div className="grid grid-cols-5 gap-2 mb-3">
+                                            {settings.categories.map(category => (
+                                              <motion.button
+                                                key={category.id}
+                                                type="button"
+                                                onClick={() => setEditCategory(category.id)}
+                                                className={`p-3 rounded-lg transition-all ${editCategory === category.id
+                                                    ? 'ring-4 ring-primary-600 scale-110'
+                                                    : 'opacity-60 hover:opacity-100'
+                                                  }`}
+                                                style={{ backgroundColor: category.color }}
+                                                title={category.name}
+                                                whileHover={{ scale: 1.1 }}
+                                                whileTap={{ scale: 0.95 }}
+                                              />
                                             ))}
-                                          </select>
+                                          </div>
+                                          <div className="text-center py-2 px-4 bg-white rounded-lg border-2 border-primary-200">
+                                            <span className="text-sm font-medium text-slate-600">選択中: </span>
+                                            <span className="text-base font-bold text-primary-600">
+                                              {settings.categories.find(c => c.id === editCategory)?.name || 'カテゴリーを選択'}
+                                            </span>
+                                          </div>
                                         </div>
 
-                                        {/* Time Selection */}
+                                        {/* Start Time Input */}
                                         <div>
                                           <label className="block text-sm font-medium text-slate-700 mb-2">
-                                            終了時刻
+                                            開始時刻
                                           </label>
                                           <div className="flex gap-2">
                                             <input
                                               type="number"
                                               min="0"
                                               max="23"
-                                              value={editTime.hours}
-                                              onChange={(e) => setEditTime({ ...editTime, hours: parseInt(e.target.value) || 0 })}
-                                              className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                              value={editStartTime.hours}
+                                              onChange={(e) => setEditStartTime({ ...editStartTime, hours: parseInt(e.target.value) || 0 })}
+                                              className="flex-1 px-4 py-3 bg-white border-2 border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-center text-2xl font-bold"
                                               placeholder="時"
                                             />
+                                            <span className="flex items-center text-2xl font-bold text-slate-400">:</span>
                                             <input
                                               type="number"
                                               min="0"
                                               max="59"
-                                              value={editTime.minutes}
-                                              onChange={(e) => setEditTime({ ...editTime, minutes: parseInt(e.target.value) || 0 })}
-                                              className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                              value={editStartTime.minutes}
+                                              onChange={(e) => setEditStartTime({ ...editStartTime, minutes: parseInt(e.target.value) || 0 })}
+                                              className="flex-1 px-4 py-3 bg-white border-2 border-slate-300 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-center text-2xl font-bold"
                                               placeholder="分"
                                             />
                                           </div>
                                         </div>
 
+                                        {/* Duration Input */}
+                                        <div className="space-y-4">
+                                          <label className="block text-sm font-medium text-slate-700">
+                                            学習時間
+                                          </label>
+                                          
+                                          <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
+                                            {/* Hours Input (Counter) */}
+                                            <div className="flex flex-col items-center gap-2">
+                                              <span className="text-sm font-medium text-slate-500">時間</span>
+                                              <div className="bg-white rounded-2xl border-2 border-slate-200 p-4 w-32 flex flex-col items-center shadow-sm">
+                                                <motion.button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const current = parseInt(String(editDuration.hours)) || 0;
+                                                    setEditDuration(prev => ({ ...prev, hours: String(current + 1) }));
+                                                  }}
+                                                  className="w-full bg-primary-50 hover:bg-primary-100 text-primary-600 rounded-lg p-2 transition-colors"
+                                                  whileTap={{ scale: 0.95 }}
+                                                >
+                                                  ▲
+                                                </motion.button>
+                                                <div className="text-4xl font-bold text-slate-800 my-2 tabular-nums">
+                                                  {editDuration.hours || '0'}
+                                                </div>
+                                                <motion.button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const current = parseInt(String(editDuration.hours)) || 0;
+                                                    if (current > 0) setEditDuration(prev => ({ ...prev, hours: String(current - 1) }));
+                                                  }}
+                                                  className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg p-2 transition-colors"
+                                                  whileTap={{ scale: 0.95 }}
+                                                >
+                                                  ▼
+                                                </motion.button>
+                                              </div>
+                                            </div>
+
+                                            {/* Minutes Input (Clock Widget) */}
+                                            <div className="flex flex-col items-center gap-2">
+                                              <span className="text-sm font-medium text-slate-500">分</span>
+                                              <div className="bg-white rounded-full border-2 border-slate-100 shadow-sm p-1">
+                                                <ClockPicker 
+                                                  value={parseInt(String(editDuration.minutes)) || 0}
+                                                  onChange={(val: number) => setEditDuration(prev => ({ ...prev, minutes: String(val) }))}
+                                                  size={200}
+                                                />
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+
                                         {/* Save/Cancel Buttons */}
                                         <div className="flex gap-2">
-                                          <button
-                                            onClick={() => handleSaveEdit(log.id, log.duration)}
-                                            className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                                          <motion.button
+                                            onClick={() => handleSaveEdit(log.id)}
+                                            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
                                           >
                                             保存
-                                          </button>
-                                          <button
+                                          </motion.button>
+                                          <motion.button
                                             onClick={handleCancelEdit}
-                                            className="flex-1 px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+                                            className="flex-1 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-3 px-4 rounded-lg transition-colors"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
                                           >
                                             キャンセル
-                                          </button>
+                                          </motion.button>
                                         </div>
                                       </div>
                                     ) : (
