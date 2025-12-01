@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
@@ -134,9 +134,11 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Fullscreen Timer */}
-      {fullscreenTimer && (
-        <Timer fullscreen={true} onClose={() => setFullscreenTimer(false)} />
-      )}
+      <AnimatePresence>
+        {fullscreenTimer && (
+          <Timer key="timer-overlay" fullscreen={true} onClose={() => setFullscreenTimer(false)} />
+        )}
+      </AnimatePresence>
     </>
   );
 };
