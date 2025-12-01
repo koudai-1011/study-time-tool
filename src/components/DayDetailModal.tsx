@@ -6,6 +6,7 @@ import { formatTimeJapanese } from '../utils/timeFormat';
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import type { StudyLog } from '../types';
+import { ClockPicker } from './ClockPicker';
 
 interface DayDetailModalProps {
   date: string; // ISO string
@@ -304,9 +305,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                     </div>
                   </div>
 
-import { ClockPicker } from './ClockPicker';
 
-// ... (inside component)
 
                   {/* Modern Time Input */}
                   <div className="space-y-4">
@@ -353,7 +352,7 @@ import { ClockPicker } from './ClockPicker';
                         <div className="bg-white rounded-full border-2 border-slate-100 shadow-sm p-1">
                           <ClockPicker 
                             value={parseInt(String(newDuration.minutes)) || 0}
-                            onChange={(val) => setNewDuration(prev => ({ ...prev, minutes: String(val) }))}
+                            onChange={(val: number) => setNewDuration(prev => ({ ...prev, minutes: String(val) }))}
                             size={200}
                           />
                         </div>
