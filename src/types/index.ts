@@ -20,7 +20,7 @@ export interface Settings {
   dashboardLayout?: DashboardLayout;
 }
 
-export type DashboardWidgetType = 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';
+export type DashboardWidgetType = 'start_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';
 
 export interface DashboardLayout {
   widgets: {

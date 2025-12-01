@@ -27,12 +27,13 @@ export const useStudyData = (user: User | null) => {
     categories: DEFAULT_CATEGORIES,
     dashboardLayout: {
       widgets: [
-        { id: 'progress', visible: true, order: 0 },
-        { id: 'daily_goal', visible: true, order: 1 },
-        { id: 'today_study', visible: true, order: 2 },
-        { id: 'total_study', visible: true, order: 3 },
-        { id: 'remaining_time', visible: true, order: 4 },
-        { id: 'category_chart', visible: true, order: 5 },
+        { id: 'start_timer', visible: true, order: 0 },
+        { id: 'progress', visible: true, order: 1 },
+        { id: 'daily_goal', visible: true, order: 2 },
+        { id: 'today_study', visible: true, order: 3 },
+        { id: 'total_study', visible: true, order: 4 },
+        { id: 'remaining_time', visible: true, order: 5 },
+        { id: 'category_chart', visible: true, order: 6 },
       ]
     }
   });

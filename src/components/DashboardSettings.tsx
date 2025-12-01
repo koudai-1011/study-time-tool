@@ -4,6 +4,7 @@ import type { DashboardWidgetType } from '../types';
 import { ArrowUp, ArrowDown, Eye, EyeOff } from 'lucide-react';
 
 const WIDGET_LABELS: Record<DashboardWidgetType, string> = {
+  start_timer: '計測開始ボタン',
   progress: '全体の進捗',
   daily_goal: '1日の目標',
   today_study: '今日の学習',
@@ -16,12 +17,13 @@ export const DashboardSettings: React.FC = () => {
   const { settings, updateSettings } = useStudy();
   const layout = settings.dashboardLayout || {
     widgets: [
-      { id: 'progress', visible: true, order: 0 },
-      { id: 'daily_goal', visible: true, order: 1 },
-      { id: 'today_study', visible: true, order: 2 },
-      { id: 'total_study', visible: true, order: 3 },
-      { id: 'remaining_time', visible: true, order: 4 },
-      { id: 'category_chart', visible: true, order: 5 },
+      { id: 'start_timer', visible: true, order: 0 },
+      { id: 'progress', visible: true, order: 1 },
+      { id: 'daily_goal', visible: true, order: 2 },
+      { id: 'today_study', visible: true, order: 3 },
+      { id: 'total_study', visible: true, order: 4 },
+      { id: 'remaining_time', visible: true, order: 5 },
+      { id: 'category_chart', visible: true, order: 6 },
     ]
   };
 

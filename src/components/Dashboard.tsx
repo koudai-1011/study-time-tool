@@ -41,12 +41,13 @@ export const Dashboard: React.FC = () => {
 
   const layout = settings.dashboardLayout || {
     widgets: [
-      { id: 'progress', visible: true, order: 0 },
-      { id: 'daily_goal', visible: true, order: 1 },
-      { id: 'today_study', visible: true, order: 2 },
-      { id: 'total_study', visible: true, order: 3 },
-      { id: 'remaining_time', visible: true, order: 4 },
-      { id: 'category_chart', visible: true, order: 5 },
+      { id: 'start_timer', visible: true, order: 0 },
+      { id: 'progress', visible: true, order: 1 },
+      { id: 'daily_goal', visible: true, order: 2 },
+      { id: 'today_study', visible: true, order: 3 },
+      { id: 'total_study', visible: true, order: 4 },
+      { id: 'remaining_time', visible: true, order: 5 },
+      { id: 'category_chart', visible: true, order: 6 },
     ]
   };
 
@@ -58,25 +59,28 @@ export const Dashboard: React.FC = () => {
           <p className="text-slate-500 mt-2">進捗を確認して、集中力を維持しましょう。</p>
         </header>
 
-        {/* Timer Button at Top */}
-        <motion.button
-          onClick={() => setFullscreenTimer(true)}
-          className="col-span-1 md:col-span-2 lg:col-span-4 w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold py-6 rounded-2xl shadow-xl shadow-primary-600/30 transition-all flex items-center justify-center gap-3 text-lg mb-4"
-          whileHover={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(59, 130, 246, 0.5)' }}
-          whileTap={{ scale: 0.98 }}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-        >
-          <Maximize2 size={24} />
-          計測開始
-        </motion.button>
-
         {/* Dynamic Widgets */}
         {layout.widgets
           .filter(w => w.visible)
           .map((widget) => {
             switch (widget.id) {
+              case 'start_timer':
+                return (
+                  <motion.button
+                    key="start_timer"
+                    onClick={() => setFullscreenTimer(true)}
+                    className="col-span-1 md:col-span-2 lg:col-span-4 w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold py-6 rounded-2xl shadow-xl shadow-primary-600/30 transition-all flex items-center justify-center gap-3 text-lg"
+                    whileHover={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(59, 130, 246, 0.5)' }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                  >
+                    <Maximize2 size={24} />
+                    計測開始
+                  </motion.button>
+                );
+
               case 'progress':
                 return (
                   <motion.div
