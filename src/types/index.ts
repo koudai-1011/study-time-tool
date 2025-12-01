@@ -17,4 +17,15 @@ export interface Settings {
   endDate: string; // ISO string (YYYY-MM-DD)
   categories: Category[];
   defaultCategoryId?: number;
+  dashboardLayout?: DashboardLayout;
+}
+
+export type DashboardWidgetType = 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';
+
+export interface DashboardLayout {
+  widgets: {
+    id: DashboardWidgetType;
+    visible: boolean;
+    order: number;
+  }[];
 }

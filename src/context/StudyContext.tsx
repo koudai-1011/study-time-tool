@@ -22,6 +22,8 @@ interface StudyContextType {
   getCategoryLogs: (date: string) => { category: Category; duration: number }[];
   isSwipeEnabled: boolean;
   setIsSwipeEnabled: (enabled: boolean) => void;
+  setSettings: (settings: Settings) => void;
+  setLogs: (logs: StudyLog[]) => void;
 }
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
@@ -125,6 +127,8 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       getCategoryLogs,
       isSwipeEnabled,
       setIsSwipeEnabled,
+      setSettings,
+      setLogs,
     }}>
       {children}
     </StudyContext.Provider>

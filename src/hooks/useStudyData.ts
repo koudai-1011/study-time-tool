@@ -24,7 +24,17 @@ export const useStudyData = (user: User | null) => {
     targetHours: 0, 
     startDate: '', 
     endDate: '',
-    categories: DEFAULT_CATEGORIES
+    categories: DEFAULT_CATEGORIES,
+    dashboardLayout: {
+      widgets: [
+        { id: 'progress', visible: true, order: 0 },
+        { id: 'daily_goal', visible: true, order: 1 },
+        { id: 'today_study', visible: true, order: 2 },
+        { id: 'total_study', visible: true, order: 3 },
+        { id: 'remaining_time', visible: true, order: 4 },
+        { id: 'category_chart', visible: true, order: 5 },
+      ]
+    }
   });
   const [logs, setLogs] = useState<StudyLog[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
