@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { differenceInCalendarDays, parseISO, startOfDay, differenceInSeconds } from 'date-fns';
+import { differenceInCalendarDays, parseISO, startOfDay, differenceInSeconds, endOfDay } from 'date-fns';
 import { useAuth } from './AuthContext';
 import { db } from '../firebase';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -205,7 +205,7 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Real-time countdown to end date (in seconds)
   const timeRemainingSeconds = endDateParsed
-    ? Math.max(0, differenceInSeconds(endDateParsed, currentTime))
+    ? Math.max(0, differenceInSeconds(endOfDay(endDateParsed), currentTime))
     : 0;
 
   const dailyGoalHours = daysRemaining > 0 ? remainingHours / (daysRemaining + 1) : 0;
