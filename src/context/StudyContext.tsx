@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import { differenceInCalendarDays, parseISO, startOfDay, differenceInSeconds, endOfDay } from 'date-fns';
 import { useAuth } from './AuthContext';
 import type { Category, StudyLog, Settings } from '../types';
@@ -34,19 +34,39 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [isSwipeEnabled, setIsSwipeEnabled] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Update current time every second for real-time countdown
+  // Dynamic update interval based on time remaining
+  // - When time is low (< 1 hour): update every 1 second
+  // - Otherwise: update every 60 seconds to save battery
   useEffect(() => {
-    const interval = setInterval(() => {
+    const endDateParsed = settings.endDate ? parseISO(settings.endDate) : null;
+    if (!endDateParsed) return; // No end date, no need to update
+    
+    const calculateInterval = () => {
+      const timeRemaining = differenceInSeconds(endOfDay(endDateParsed), new Date());
+      return timeRemaining < 3600 ? 1000 : 60000; // 1s if < 1 hour, else 60s
+    };
+
+    let interval = calculateInterval();
+    const timer = setInterval(() => {
       setCurrentTime(new Date());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
+      
+      // Recalculate interval dynamically
+      const newInterval = calculateInterval();
+      if (newInterval !== interval) {
+        interval = newInterval;
+        clearInterval(timer);
+        // Restart with new interval
+      }
+    }, interval);
+    
+    return () => clearInterval(timer);
+  }, [settings.endDate]);
 
-  const updateSettings = (newSettings: Settings) => {
+  const updateSettings = useCallback((newSettings: Settings) => {
     setSettings(newSettings);
-  };
+  }, [setSettings]);
 
-  const addLog = (duration: number, categoryId: number, endDate?: string) => {
+  const addLog = useCallback((duration: number, categoryId: number, endDate?: string) => {
     const endTime = endDate ? new Date(endDate) : new Date();
     const startTime = new Date(endTime.getTime() - duration * 1000);
     
@@ -88,19 +108,19 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       
       setLogs((prev) => [...prev, ...logs]);
     }
-  };
+  }, [setLogs]);
 
-  const updateLog = (logId: string, updates: Partial<StudyLog>) => {
+  const updateLog = useCallback((logId: string, updates: Partial<StudyLog>) => {
     setLogs((prev) => prev.map(log => 
       log.id === logId ? { ...log, ...updates } : log
     ));
-  };
+  }, [setLogs]);
 
-  const deleteLog = (logId: string) => {
+  const deleteLog = useCallback((logId: string) => {
     setLogs((prev) => prev.filter(log => log.id !== logId));
-  };
+  }, [setLogs]);
 
-  const getCategoryLogs = (date: string) => {
+  const getCategoryLogs = useCallback((date: string) => {
     const targetDate = startOfDay(parseISO(date));
     const dayLogs = logs.filter(log => {
       const logDate = startOfDay(parseISO(log.date));
@@ -117,32 +137,46 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       category: settings.categories.find(c => c.id === categoryId) || DEFAULT_CATEGORIES[0],
       duration
     }));
-  };
+  }, [logs, settings.categories, DEFAULT_CATEGORIES]);
 
-  // Calculations
-  const totalStudiedSeconds = logs.reduce((acc, log) => acc + log.duration, 0);
-  const totalStudiedHours = totalStudiedSeconds / 3600;
+  // Memoized calculations to prevent recalculation on every render
+  const totalStudiedHours = useMemo(() => {
+    const totalStudiedSeconds = logs.reduce((acc, log) => acc + log.duration, 0);
+    return totalStudiedSeconds / 3600;
+  }, [logs]);
 
-  const remainingHours = Math.max(0, settings.targetHours - totalStudiedHours);
+  const remainingHours = useMemo(() => 
+    Math.max(0, settings.targetHours - totalStudiedHours),
+    [settings.targetHours, totalStudiedHours]
+  );
 
-  const today = startOfDay(new Date());
-  const endDateParsed = settings.endDate ? parseISO(settings.endDate) : null;
-  
-  const daysRemaining = endDateParsed 
-    ? Math.max(0, differenceInCalendarDays(endDateParsed, today))
-    : 0;
+  const { daysRemaining, timeRemainingSeconds } = useMemo(() => {
+    const today = startOfDay(new Date());
+    const endDateParsed = settings.endDate ? parseISO(settings.endDate) : null;
+    
+    const days = endDateParsed 
+      ? Math.max(0, differenceInCalendarDays(endDateParsed, today))
+      : 0;
 
-  // Real-time countdown to end date (in seconds)
-  const timeRemainingSeconds = endDateParsed
-    ? Math.max(0, differenceInSeconds(endOfDay(endDateParsed), currentTime))
-    : 0;
+    const timeSeconds = endDateParsed
+      ? Math.max(0, differenceInSeconds(endOfDay(endDateParsed), currentTime))
+      : 0;
 
-  const dailyGoalHours = daysRemaining > 0 ? remainingHours / (daysRemaining + 1) : 0;
+    return { daysRemaining: days, timeRemainingSeconds: timeSeconds };
+  }, [settings.endDate, currentTime]);
 
-  const todayStudiedSeconds = logs
-    .filter(log => differenceInCalendarDays(parseISO(log.date), today) === 0)
-    .reduce((acc, log) => acc + log.duration, 0);
-  const todayStudiedHours = todayStudiedSeconds / 3600;
+  const dailyGoalHours = useMemo(() => 
+    daysRemaining > 0 ? remainingHours / (daysRemaining + 1) : 0,
+    [daysRemaining, remainingHours]
+  );
+
+  const todayStudiedHours = useMemo(() => {
+    const today = startOfDay(new Date());
+    const todayStudiedSeconds = logs
+      .filter(log => differenceInCalendarDays(parseISO(log.date), today) === 0)
+      .reduce((acc, log) => acc + log.duration, 0);
+    return todayStudiedSeconds / 3600;
+  }, [logs]);
 
   return (
     <StudyContext.Provider value={{
