@@ -7,6 +7,8 @@ import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat
 import { StatCard } from './StatCard';
 import { CategoryChart } from './CategoryChart';
 
+import { SabotageModal } from './SabotageModal';
+
 export const Dashboard: React.FC = () => {
   const {
     totalStudiedHours,
@@ -20,6 +22,7 @@ export const Dashboard: React.FC = () => {
     : 0;
 
   const [fullscreenTimer, setFullscreenTimer] = useState(false);
+  const [showSabotageModal, setShowSabotageModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every second for real-time daily goal calculation
@@ -133,12 +136,16 @@ export const Dashboard: React.FC = () => {
 
               case 'daily_goal':
                 return (
-                  <div key="daily_goal" className="col-span-1 md:col-span-2 lg:col-span-1">
+                  <div 
+                    key="daily_goal" 
+                    className="col-span-1 md:col-span-2 lg:col-span-1 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                    onClick={() => setShowSabotageModal(true)}
+                  >
                     <StatCard
                       icon={<Target className="text-blue-500" />}
                       label="1日の目標"
                       value={formatTimeJapanese(realtimeDailyGoal)}
-                      subtext="期限まで"
+                      subtext="期限まで（タップでサボり計算）"
                       color="bg-blue-50"
                     />
                   </div>
@@ -184,6 +191,14 @@ export const Dashboard: React.FC = () => {
             }
           })}
       </div>
+
+      {/* Sabotage Modal */}
+      {showSabotageModal && (
+        <SabotageModal 
+          dailyGoalHours={realtimeDailyGoal} 
+          onClose={() => setShowSabotageModal(false)} 
+        />
+      )}
 
       {/* Fullscreen Timer */}
       <AnimatePresence mode="wait">

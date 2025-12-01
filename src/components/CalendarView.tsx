@@ -114,7 +114,7 @@ export const CalendarView: React.FC = () => {
 
                 {hasStudy && (
                   <>
-                    <span className="text-xs font-bold text-primary-600">
+                    <span className="text-[10px] md:text-xs font-bold text-primary-600 truncate w-full text-center px-0.5">
                       {formatTimeJapanese(hours)}
                     </span>
                     {categoryColors.length > 0 && (

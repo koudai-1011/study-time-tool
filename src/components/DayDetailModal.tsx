@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Plus, ChevronDown } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
@@ -22,7 +22,14 @@ interface GroupedLog {
 }
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose }) => {
-  const { logs, settings, deleteLog, addLog } = useStudy();
+  const { logs, settings, deleteLog, addLog, setIsSwipeEnabled } = useStudy();
+  
+  // Disable global swipe navigation when modal is open
+  useEffect(() => {
+    setIsSwipeEnabled(false);
+    return () => setIsSwipeEnabled(true);
+  }, [setIsSwipeEnabled]);
+
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDuration, setNewDuration] = useState({ hours: '', minutes: '' });
   const [newCategoryId, setNewCategoryId] = useState(0);

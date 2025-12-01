@@ -22,10 +22,12 @@ export interface Settings {
 
 export type DashboardWidgetType = 'start_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';
 
+export interface DashboardWidget {
+  id: DashboardWidgetType;
+  visible: boolean;
+  order: number;
+}
+
 export interface DashboardLayout {
-  widgets: {
-    id: DashboardWidgetType;
-    visible: boolean;
-    order: number;
-  }[];
+  widgets: DashboardWidget[];
 }
