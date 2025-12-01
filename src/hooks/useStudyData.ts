@@ -41,6 +41,35 @@ export const useStudyData = (user: User | null) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const isLoadingRef = useRef(true);
 
+  // Migration function to ensure start_timer widget exists
+  const migrateSettings = (loadedSettings: Settings): Settings => {
+    if (!loadedSettings.dashboardLayout) {
+      return loadedSettings;
+    }
+
+    const hasStartTimer = loadedSettings.dashboardLayout.widgets.some(w => w.id === 'start_timer');
+    
+    if (!hasStartTimer) {
+      // Add start_timer as the first widget
+      const updatedWidgets = [
+        { id: 'start_timer' as const, visible: true, order: 0 },
+        ...loadedSettings.dashboardLayout.widgets.map(w => ({
+          ...w,
+          order: w.order + 1
+        }))
+      ];
+      
+      return {
+        ...loadedSettings,
+        dashboardLayout: {
+          widgets: updatedWidgets
+        }
+      };
+    }
+    
+    return loadedSettings;
+  };
+
   // Load initial data
   useEffect(() => {
     isLoadingRef.current = true;
@@ -50,10 +79,11 @@ export const useStudyData = (user: User | null) => {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
-        setSettings({
+        const migratedSettings = migrateSettings({
           ...parsed.settings,
           categories: parsed.settings.categories || DEFAULT_CATEGORIES
         });
+        setSettings(migratedSettings);
         setLogs(parsed.logs || []);
       }
       setIsInitialized(true);
@@ -64,10 +94,11 @@ export const useStudyData = (user: User | null) => {
       const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setSettings({
+          const migratedSettings = migrateSettings({
             ...(data.settings || { targetHours: 0, startDate: '', endDate: '' }),
             categories: data.settings?.categories || DEFAULT_CATEGORIES
           });
+          setSettings(migratedSettings);
           setLogs(data.logs || []);
         } else {
           // New User: Migrate local data to Firestore if available
