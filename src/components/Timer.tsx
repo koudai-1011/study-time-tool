@@ -61,6 +61,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   const [isRunning, setIsRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [selectedCategory, setSelectedCategory] = useState(0);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const notificationRef = useRef<Notification | null>(null);
@@ -219,6 +220,27 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     }
   };
 
+  const handleCloseClick = () => {
+    if (elapsed > 0) {
+      setShowConfirmModal(true);
+    } else {
+      onClose?.();
+    }
+  };
+
+  const handleSaveAndClose = () => {
+    handleStop();
+    setShowConfirmModal(false);
+  };
+
+  const handleDiscardAndClose = () => {
+    setElapsed(0);
+    setIsRunning(false);
+    closeNotification();
+    setShowConfirmModal(false);
+    onClose?.();
+  };
+
   const CategorySelector = ({ compact = false }: { compact?: boolean }) => (
     <div className={`grid ${compact ? 'grid-cols-5' : 'grid-cols-5'} gap-2 ${compact ? '' : 'mb-4'}`}>
       {settings.categories.map(category => (
@@ -253,7 +275,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           style={{ willChange: 'opacity, transform' }}
         >
           <button
-            onClick={onClose}
+            onClick={handleCloseClick}
             className="absolute top-4 right-4 p-3 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
           >
             <X size={24} className="text-slate-600" />
@@ -306,6 +328,40 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
               </p>
             )}
           </div>
+
+          {/* Confirmation Modal */}
+          {showConfirmModal && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+              <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                <h3 className="text-2xl font-bold text-slate-800 mb-4 text-center">
+                  保存しますか？
+                </h3>
+                <p className="text-slate-600 mb-8 text-center">
+                  {formatTime(elapsed)} の記録があります
+                </p>
+                <div className="space-y-3">
+                  <button
+                    onClick={handleSaveAndClose}
+                    className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg shadow-primary-600/30 transition-all active:scale-95"
+                  >
+                    保存して閉じる
+                  </button>
+                  <button
+                    onClick={handleDiscardAndClose}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-4 px-6 rounded-2xl transition-all active:scale-95"
+                  >
+                    保存せずに閉じる
+                  </button>
+                  <button
+                    onClick={() => setShowConfirmModal(false)}
+                    className="w-full bg-white hover:bg-slate-50 text-slate-600 font-medium py-4 px-6 rounded-2xl border-2 border-slate-200 transition-all active:scale-95"
+                  >
+                    キャンセル
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </motion.div>
       </ErrorBoundary>
     );
