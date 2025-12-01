@@ -134,7 +134,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Fullscreen Timer */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {fullscreenTimer && (
           <Timer key="timer-overlay" fullscreen={true} onClose={() => setFullscreenTimer(false)} />
         )}
