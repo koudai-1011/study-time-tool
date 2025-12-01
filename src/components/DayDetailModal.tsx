@@ -1,14 +1,23 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Plus } from 'lucide-react';
+import { X, Trash2, Plus, ChevronDown, ChevronRight } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { formatTimeJapanese } from '../utils/timeFormat';
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import type { StudyLog } from '../types';
 
 interface DayDetailModalProps {
   date: string; // ISO string
   onClose: () => void;
+}
+
+interface GroupedLog {
+  categoryId: number;
+  categoryName: string;
+  categoryColor: string;
+  totalDuration: number;
+  logs: StudyLog[];
 }
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose }) => {
@@ -16,12 +25,53 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
   const [showAddForm, setShowAddForm] = useState(false);
   const [newDuration, setNewDuration] = useState({ hours: '', minutes: '' });
   const [newCategoryId, setNewCategoryId] = useState(0);
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
 
   const dayLogs = logs.filter(log => {
     const logDate = parseISO(log.date).toDateString();
     const targetDate = parseISO(date).toDateString();
     return logDate === targetDate;
   });
+
+  // Group logs by category
+  const groupedLogs: GroupedLog[] = [];
+  const categoryMap = new Map<number, GroupedLog>();
+
+  dayLogs.forEach(log => {
+    const category = settings.categories.find(c => c.id === log.categoryId);
+    if (!category) return;
+
+    if (!categoryMap.has(log.categoryId)) {
+      const group: GroupedLog = {
+        categoryId: log.categoryId,
+        categoryName: category.name,
+        categoryColor: category.color,
+        totalDuration: 0,
+        logs: []
+      };
+      categoryMap.set(log.categoryId, group);
+      groupedLogs.push(group);
+    }
+
+    const group = categoryMap.get(log.categoryId)!;
+    group.totalDuration += log.duration;
+    group.logs.push(log);
+  });
+
+  // Sort logs within each group by date
+  groupedLogs.forEach(group => {
+    group.logs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  });
+
+  const toggleCategory = (categoryId: number) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
 
   const handleDelete = (logId: string) => {
     if (confirm('このログを削除しますか？')) {
@@ -86,7 +136,7 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="popLayout">
-            {dayLogs.length === 0 ? (
+            {groupedLogs.length === 0 ? (
               <motion.div
                 className="text-center py-12"
                 initial={{ opacity: 0 }}
@@ -97,50 +147,103 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
               </motion.div>
             ) : (
               <div className="space-y-3">
-                {dayLogs.map((log, index) => {
-                  const category = settings.categories.find(c => c.id === log.categoryId);
+                {groupedLogs.map((group, index) => {
+                  const isExpanded = expandedCategories.has(group.categoryId);
                   return (
                     <motion.div
-                      key={log.id}
-                      className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20, height: 0 }}
+                      key={group.categoryId}
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
                       transition={{ delay: index * 0.05 }}
                       layout
                     >
+                      {/* Category Group Header */}
                       <motion.div
-                        className="w-12 h-12 rounded-lg flex-shrink-0"
-                        style={{ backgroundColor: category?.color }}
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                      />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <select
-                            value={log.categoryId}
-                            onChange={(e) => updateLog(log.id, { categoryId: Number(e.target.value) })}
-                            className="font-semibold text-slate-800 bg-transparent border border-slate-200 rounded-lg px-3 py-1 hover:border-primary-500 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none cursor-pointer"
-                          >
-                            {settings.categories.map(cat => (
-                              <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <p className="text-sm text-slate-500">
-                          {formatTimeJapanese(log.duration / 3600)}
-                        </p>
-                      </div>
-                      <motion.button
-                        onClick={() => handleDelete(log.id)}
-                        className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
-                        title="削除"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                        className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+                        onClick={() => toggleCategory(group.categoryId)}
+                        whileHover={{ scale: 1.01 }}
+                        whileTap={{ scale: 0.99 }}
                       >
-                        <Trash2 size={20} />
-                      </motion.button>
+                        <motion.div
+                          className="w-12 h-12 rounded-lg flex-shrink-0"
+                          style={{ backgroundColor: group.categoryColor }}
+                          whileHover={{ scale: 1.1, rotate: 5 }}
+                        />
+                        <div className="flex-1">
+                          <div className="font-semibold text-slate-800 mb-1">
+                            {group.categoryName}
+                          </div>
+                          <p className="text-sm text-slate-500">
+                            {formatTimeJapanese(group.totalDuration / 3600)}
+                            {group.logs.length > 1 && (
+                              <span className="ml-2 text-xs">
+                                ({group.logs.length}回)
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <motion.div
+                          animate={{ rotate: isExpanded ? 0 : -90 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ChevronDown size={20} className="text-slate-400" />
+                        </motion.div>
+                      </motion.div>
+
+                      {/* Expanded Individual Logs */}
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="ml-4 mt-2 space-y-2"
+                          >
+                            {group.logs.map((log, logIndex) => {
+                              const logTime = parseISO(log.date);
+                              const endTime = new Date(logTime.getTime());
+                              const startTime = new Date(endTime.getTime() - log.duration * 1000);
+                              
+                              return (
+                                <motion.div
+                                  key={log.id}
+                                  className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-colors"
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 10 }}
+                                  transition={{ delay: logIndex * 0.03 }}
+                                >
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                                      <span className="font-medium">
+                                        {format(startTime, 'HH:mm')} - {format(endTime, 'HH:mm')}
+                                      </span>
+                                      <span className="text-slate-400">•</span>
+                                      <span className="text-slate-500">
+                                        {formatTimeJapanese(log.duration / 3600)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <motion.button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDelete(log.id);
+                                    }}
+                                    className="p-2 rounded-lg hover:bg-red-50 text-red-600 transition-colors"
+                                    title="削除"
+                                    whileHover={{ scale: 1.1 }}
+                                    whileTap={{ scale: 0.9 }}
+                                  >
+                                    <Trash2 size={16} />
+                                  </motion.button>
+                                </motion.div>
+                              );
+                            })}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
                   );
                 })}
