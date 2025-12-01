@@ -68,6 +68,7 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   });
   const [logs, setLogs] = useState<StudyLog[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const isLoadingRef = React.useRef(true);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every second for real-time countdown
@@ -79,7 +80,10 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   // Load initial data from localStorage or Firestore
+  // Load initial data from localStorage or Firestore
   useEffect(() => {
+    isLoadingRef.current = true;
+    
     if (!user) {
       // Local Storage Mode
       const stored = localStorage.getItem(STORAGE_KEY);
@@ -92,6 +96,7 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setLogs(parsed.logs || []);
       }
       setIsInitialized(true);
+      isLoadingRef.current = false;
     } else {
       // Firestore Mode
       const userDocRef = doc(db, 'users', user.uid);
@@ -103,8 +108,27 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             categories: data.settings?.categories || DEFAULT_CATEGORIES
           });
           setLogs(data.logs || []);
+        } else {
+          // New User: Migrate local data to Firestore if available
+          const stored = localStorage.getItem(STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            const initialSettings = {
+              ...parsed.settings,
+              categories: parsed.settings.categories || DEFAULT_CATEGORIES
+            };
+            const initialLogs = parsed.logs || [];
+            
+            // Set state immediately
+            setSettings(initialSettings);
+            setLogs(initialLogs);
+            
+            // Save to Firestore immediately
+            setDoc(userDocRef, { settings: initialSettings, logs: initialLogs }, { merge: true });
+          }
         }
         setIsInitialized(true);
+        isLoadingRef.current = false;
       });
       return () => unsubscribe();
     }
@@ -112,7 +136,7 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   // Save data when it changes
   useEffect(() => {
-    if (!isInitialized) return;
+    if (!isInitialized || isLoadingRef.current) return;
 
     if (!user) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ settings, logs }));
