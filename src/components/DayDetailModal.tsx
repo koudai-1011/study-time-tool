@@ -304,131 +304,59 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
                     </div>
                   </div>
 
+import { ClockPicker } from './ClockPicker';
+
+// ... (inside component)
+
                   {/* Modern Time Input */}
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     <label className="block text-sm font-medium text-slate-700">
                       学習時間
                     </label>
                     
-                    {/* Hours Input */}
-                    <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-600">時間</span>
-                        <span className="text-2xl font-bold text-slate-800">
-                          {newDuration.hours || '0'}
-                          <span className="text-sm font-normal text-slate-500 ml-1">時間</span>
-                        </span>
+                    <div className="flex flex-col md:flex-row gap-6 items-center justify-center">
+                      {/* Hours Input (Counter) */}
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-sm font-medium text-slate-500">時間</span>
+                        <div className="bg-white rounded-2xl border-2 border-slate-200 p-4 w-32 flex flex-col items-center shadow-sm">
+                          <motion.button
+                            type="button"
+                            onClick={() => {
+                              const current = parseInt(String(newDuration.hours)) || 0;
+                              setNewDuration(prev => ({ ...prev, hours: String(current + 1) }));
+                            }}
+                            className="w-full bg-primary-50 hover:bg-primary-100 text-primary-600 rounded-lg p-2 transition-colors"
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            ▲
+                          </motion.button>
+                          <div className="text-4xl font-bold text-slate-800 my-2 tabular-nums">
+                            {newDuration.hours || '0'}
+                          </div>
+                          <motion.button
+                            type="button"
+                            onClick={() => {
+                              const current = parseInt(String(newDuration.hours)) || 0;
+                              if (current > 0) setNewDuration(prev => ({ ...prev, hours: String(current - 1) }));
+                            }}
+                            className="w-full bg-slate-50 hover:bg-slate-100 text-slate-500 rounded-lg p-2 transition-colors"
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            ▼
+                          </motion.button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <motion.button
-                          type="button"
-                          onClick={() => {
-                            const current = parseInt(String(newDuration.hours)) || 0;
-                            if (current > 0) setNewDuration(prev => ({ ...prev, hours: String(current - 1) }));
-                          }}
-                          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-lg transition-colors"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          −
-                        </motion.button>
-                        <input
-                          type="number"
-                          min="0"
-                          value={newDuration.hours}
-                          onChange={(e) => setNewDuration(prev => ({ ...prev, hours: e.target.value }))}
-                          className="w-20 text-center text-lg font-bold border-2 border-slate-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none"
-                        />
-                        <motion.button
-                          type="button"
-                          onClick={() => {
-                            const current = parseInt(String(newDuration.hours)) || 0;
-                            setNewDuration(prev => ({ ...prev, hours: String(current + 1) }));
-                          }}
-                          className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-lg transition-colors"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          ＋
-                        </motion.button>
-                      </div>
-                    </div>
 
-                    {/* Minutes Input */}
-                    <div className="bg-white rounded-xl border-2 border-slate-200 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-600">分</span>
-                        <span className="text-2xl font-bold text-slate-800">
-                          {newDuration.minutes || '0'}
-                          <span className="text-sm font-normal text-slate-500 ml-1">分</span>
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <motion.button
-                          type="button"
-                          onClick={() => {
-                            const current = parseInt(String(newDuration.minutes)) || 0;
-                            if (current > 0) {
-                              setNewDuration(prev => ({ ...prev, minutes: String(current - 5) }));
-                            }
-                          }}
-                          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py- rounded-lg transition-colors text-sm"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          −5
-                        </motion.button>
-                        <motion.button
-                          type="button"
-                          onClick={() => {
-                            const current = parseInt(String(newDuration.minutes)) || 0;
-                            if (current > 0) setNewDuration(prev => ({ ...prev, minutes: String(current - 1) }));
-                          }}
-                          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 rounded-lg transition-colors"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          −
-                        </motion.button>
-                        <input
-                          type="number"
-                          min="0"
-                          max="59"
-                          value={newDuration.minutes}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 0;
-                            setNewDuration(prev => ({ ...prev, minutes: String(Math.min(59, Math.max(0, val))) }));
-                          }}
-                          className="w-20 text-center text-lg font-bold border-2 border-slate-200 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none"
-                        />
-                        <motion.button
-                          type="button"
-                          onClick={() => {
-                            const current = parseInt(String(newDuration.minutes)) || 0;
-                            if (current < 59) setNewDuration(prev => ({ ...prev, minutes: String(current + 1) }));
-                          }}
-                          className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-lg transition-colors"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          ＋
-                        </motion.button>
-                        <motion.button
-                          type="button"
-                          onClick={() => {
-                            const current = parseInt(String(newDuration.minutes)) || 0;
-                            if (current < 55) {
-                              setNewDuration(prev => ({ ...prev, minutes: String(current + 5) }));
-                            } else {
-                              setNewDuration(prev => ({ ...prev, minutes: '59' }));
-                            }
-                          }}
-                          className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-lg transition-colors text-sm"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          ＋5
-                        </motion.button>
+                      {/* Minutes Input (Clock Widget) */}
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-sm font-medium text-slate-500">分</span>
+                        <div className="bg-white rounded-full border-2 border-slate-100 shadow-sm p-1">
+                          <ClockPicker 
+                            value={parseInt(String(newDuration.minutes)) || 0}
+                            onChange={(val) => setNewDuration(prev => ({ ...prev, minutes: String(val) }))}
+                            size={200}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
