@@ -157,6 +157,14 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     }
   };
 
+  const handleStart = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+    }
+    setIsRunning(true);
+  };
+
   const showNotification = async () => {
     if (notificationPermission === 'granted' && isRunning) {
       try {
@@ -204,6 +212,8 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       } catch (err) {
         console.error('showNotification error:', err);
       }
+    } else if (notificationPermission !== 'granted') {
+      console.warn('Notification permission not granted:', notificationPermission);
     }
   };
 
@@ -302,7 +312,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             <div className="flex items-center gap-4 md:gap-6 justify-center">
               {!isRunning ? (
                 <button
-                  onClick={() => setIsRunning(true)}
+                  onClick={handleStart}
                   className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-primary-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 text-lg md:text-xl"
                 >
                   <Play fill="currentColor" size={24} className="md:w-8 md:h-8" />
