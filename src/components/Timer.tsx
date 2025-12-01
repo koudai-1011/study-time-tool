@@ -9,6 +9,53 @@ interface TimerProps {
   onClose?: () => void;
 }
 
+// Error boundary to catch render/runtime errors inside the Timer and show a fallback UI.
+class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { onClose?: () => void; children?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: unknown, info: unknown) {
+    console.error('ErrorBoundary caught error in Timer:', error, info);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">
+          <div className="max-w-md w-full text-center">
+            <p className="text-lg font-bold text-slate-800 mb-4">タイマーを表示できませんでした</p>
+            <p className="text-sm text-slate-500 mb-6">環境によってはアプリ化（PWA）で一部機能が制限されています。ページを再読み込みするか、アプリを再起動してください。</p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-primary-600 text-white px-4 py-2 rounded-lg"
+              >
+                再読み込み
+              </button>
+              {this.props.onClose && (
+                <button
+                  onClick={this.props.onClose}
+                  className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg"
+                >
+                  閉じる
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children as React.ReactElement | null;
+  }
+}
+
 export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => {
   const { addLog, settings } = useStudy();
   const [isRunning, setIsRunning] = useState(false);
@@ -46,53 +93,6 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
       setSelectedCategory(settings.categories[0].id);
     }
   }, [settings.categories]);
-
-  // Error boundary to catch render/runtime errors inside the Timer and show a fallback UI.
-  class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: React.ReactNode }, { hasError: boolean }> {
-    constructor(props: { onClose?: () => void; children?: React.ReactNode }) {
-      super(props);
-      this.state = { hasError: false };
-    }
-
-    static getDerivedStateFromError() {
-      return { hasError: true };
-    }
-
-    componentDidCatch(error: unknown, info: unknown) {
-      console.error('ErrorBoundary caught error in Timer:', error, info);
-    }
-
-    render() {
-      if (this.state.hasError) {
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white p-6">
-            <div className="max-w-md w-full text-center">
-              <p className="text-lg font-bold text-slate-800 mb-4">タイマーを表示できませんでした</p>
-              <p className="text-sm text-slate-500 mb-6">環境によってはアプリ化（PWA）で一部機能が制限されています。ページを再読み込みするか、アプリを再起動してください。</p>
-              <div className="flex justify-center gap-4">
-                <button
-                  onClick={() => window.location.reload()}
-                  className="bg-primary-600 text-white px-4 py-2 rounded-lg"
-                >
-                  再読み込み
-                </button>
-                {this.props.onClose && (
-                  <button
-                    onClick={this.props.onClose}
-                    className="bg-slate-100 text-slate-700 px-4 py-2 rounded-lg"
-                  >
-                    閉じる
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      return this.props.children as React.ReactElement | null;
-    }
-  }
 
   useEffect(() => {
     if (isRunning) {
