@@ -6,16 +6,16 @@ import { CategorySettings } from './CategorySettings';
 import { GoalSettings } from './GoalSettings';
 import { DataManagement } from './DataManagement';
 import { DashboardSettings } from './DashboardSettings';
-import { GoogleCalendarSettings } from './GoogleCalendarSettings';
+// import { GoogleCalendarSettings } from './GoogleCalendarSettings'; // 凍結中
 
-type SettingSection = 'account' | 'dashboard' | 'category' | 'goal' | 'data' | 'calendar';
+type SettingSection = 'account' | 'dashboard' | 'category' | 'goal' | 'data';
 
 const settingSections: { id: SettingSection; title: string; component: React.ReactNode }[] = [
   { id: 'account', title: 'アカウント設定', component: <AccountSettings /> },
   { id: 'dashboard', title: 'ダッシュボード設定', component: <DashboardSettings /> },
   { id: 'category', title: 'カテゴリ設定', component: <CategorySettings /> },
   { id: 'goal', title: '目標設定', component: <GoalSettings /> },
-  { id: 'calendar', title: 'Googleカレンダー連携', component: <GoogleCalendarSettings /> },
+  // { id: 'calendar', title: 'Googleカレンダー連携', component: <GoogleCalendarSettings /> }, // 凍結中
   { id: 'data', title: 'データ管理', component: <DataManagement /> },
 ];
 
