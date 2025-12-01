@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertTriangle, Skull } from 'lucide-react';
+import { X, Skull } from 'lucide-react';
 
 interface SabotageModalProps {
   onClose: () => void;
