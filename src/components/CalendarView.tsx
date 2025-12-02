@@ -132,10 +132,15 @@ export const CalendarView: React.FC = () => {
                         </div>
                       )}
                     </div>
-                    <div
-                      className="absolute bottom-0 inset-x-0.5 h-1 bg-primary-500 rounded-b-2xl"
-                      style={{ opacity: 0.2 + (intensity * 0.8) }}
-                    />
+                    {/* Goal achievement progress bar (water tank style) */}
+                    <div className="absolute bottom-0 left-0 right-0 h-6 overflow-hidden rounded-b-2xl">
+                      <div
+                        className="absolute bottom-0 left-0 right-0 bg-primary-400/30 dark:bg-primary-500/20 transition-all duration-300"
+                        style={{
+                          height: `${Math.min(100, (hours / (settings.targetHours / 30)) * 100)}%`
+                        }}
+                      />
+                    </div>
                   </>
                 )}
               </motion.button>
