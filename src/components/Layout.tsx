@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, Calendar, Settings as SettingsIcon, Clock } from 'lucide-react';
+import { LayoutDashboard, History, Settings as SettingsIcon, Clock } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 
 interface LayoutProps {
@@ -87,8 +87,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             onClick={() => onTabChange('dashboard')}
           />
           <NavItem
-            icon={<Calendar size={20} />}
-            label="カレンダー"
+            icon={<History size={20} />}
+            label="学習履歴"
             isActive={activeTab === 'calendar'}
             onClick={() => onTabChange('calendar')}
           />
@@ -146,8 +146,8 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
           onClick={() => onTabChange('dashboard')}
         />
         <MobileNavItem
-          icon={<Calendar size={24} />}
-          label="カレンダー"
+          icon={<History size={24} />}
+          label="学習履歴"
           isActive={activeTab === 'calendar'}
           onClick={() => onTabChange('calendar')}
         />

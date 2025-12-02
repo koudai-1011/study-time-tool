@@ -4,7 +4,7 @@ import { StudyProvider } from './context/StudyContext';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
-import { CalendarView } from './components/CalendarView';
+import { HistoryScreen } from './components/HistoryScreen';
 import { Settings } from './components/Settings';
 
 function App() {
@@ -32,7 +32,7 @@ function App() {
       <StudyProvider>
         <Layout activeTab={activeTab} onTabChange={setActiveTab}>
           {activeTab === 'dashboard' && <Dashboard />}
-          {activeTab === 'calendar' && <CalendarView />}
+          {activeTab === 'calendar' && <HistoryScreen />}
           {activeTab === 'settings' && <Settings />}
         </Layout>
       </StudyProvider>

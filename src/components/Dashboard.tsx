@@ -8,6 +8,8 @@ import { StatCard } from './StatCard';
 import { CategoryChart } from './CategoryChart';
 
 import { SabotageModal } from './SabotageModal';
+import { ProgressDetailModal } from './ProgressDetailModal';
+import { StudyTimeDetailModal } from './StudyTimeDetailModal';
 
 export const Dashboard: React.FC = () => {
   const {
@@ -23,6 +25,8 @@ export const Dashboard: React.FC = () => {
 
   const [fullscreenTimer, setFullscreenTimer] = useState(false);
   const [showSabotageModal, setShowSabotageModal] = useState(false);
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [showStudyTimeModal, setShowStudyTimeModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update current time every second for real-time daily goal calculation
@@ -88,10 +92,11 @@ export const Dashboard: React.FC = () => {
                 return (
                   <motion.div
                     key="progress"
-                    className="col-span-1 md:col-span-2 lg:col-span-4 bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm"
+                    className="col-span-1 md:col-span-2 lg:col-span-4 bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
+                    onClick={() => setShowProgressModal(true)}
                   >
                     <h3 className="text-lg font-bold text-slate-800 mb-6">全体の進捗</h3>
 
@@ -138,8 +143,7 @@ export const Dashboard: React.FC = () => {
                 return (
                   <div 
                     key="daily_goal" 
-                    className="col-span-1 md:col-span-2 lg:col-span-1 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                    onClick={() => setShowSabotageModal(true)}
+                    className="col-span-1 md:col-span-2 lg:col-span-1"
                   >
                     <StatCard
                       icon={<Target className="text-blue-500" />}
@@ -147,6 +151,7 @@ export const Dashboard: React.FC = () => {
                       value={formatTimeJapanese(realtimeDailyGoal)}
                       subtext="期限まで（タップでサボり計算）"
                       color="bg-blue-50"
+                      onClick={() => setShowSabotageModal(true)}
                     />
                   </div>
                 );
@@ -171,6 +176,7 @@ export const Dashboard: React.FC = () => {
                       value={formatTimeJapanese(totalStudiedHours)}
                       subtext={`目標 ${settings.targetHours}時間`}
                       color="bg-violet-50"
+                      onClick={() => setShowStudyTimeModal(true)}
                     />
                   </div>
                 );
@@ -192,12 +198,20 @@ export const Dashboard: React.FC = () => {
           })}
       </div>
 
-      {/* Sabotage Modal */}
+      {/* Modals */}
       {showSabotageModal && (
         <SabotageModal 
           dailyGoalHours={realtimeDailyGoal} 
           onClose={() => setShowSabotageModal(false)} 
         />
+      )}
+
+      {showProgressModal && (
+        <ProgressDetailModal onClose={() => setShowProgressModal(false)} />
+      )}
+
+      {showStudyTimeModal && (
+        <StudyTimeDetailModal onClose={() => setShowStudyTimeModal(false)} />
       )}
 
       {/* Fullscreen Timer */}

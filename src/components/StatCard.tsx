@@ -7,11 +7,13 @@ interface StatCardProps {
   value: string;
   subtext: string;
   color: string;
+  onClick?: () => void;
 }
 
-export const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtext, color }) => (
+export const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtext, color, onClick }) => (
   <motion.div
-    className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
+    className={`bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
+    onClick={onClick}
     whileHover={{ scale: 1.05, y: -5 }}
     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     initial={{ opacity: 0, y: 20 }}
