@@ -147,7 +147,7 @@ export const DashboardSettings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">ダッシュボード設定</h3>
       <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
         ダッシュボードに表示する項目の選択と並び替えができます。
@@ -155,23 +155,59 @@ export const DashboardSettings: React.FC = () => {
         <span className="text-xs text-slate-400">※並び替えは右側のアイコンをドラッグ（スマホは長押し）してください</span>
       </p>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">表示設定</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          チャートの表示内容をカスタマイズできます。
+        </p>
+
+        <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+          <div>
+            <h4 className="font-medium text-slate-700 dark:text-slate-200">目標ラインを表示</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              進捗率と学習時間の推移チャートに1日の目標ラインを表示します
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              updateSettings({
+                ...settings,
+                showDailyGoalLine: !settings.showDailyGoalLine
+              });
+            }}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              settings.showDailyGoalLine ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                settings.showDailyGoalLine ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">ウィジェット設定</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+          ダッシュボードに表示するウィジェットを選択し、並び替えることができます。ドラッグして並び替えるには、アイテムを長押ししてください。
+        </p>
+
         <DndContext 
-          sensors={sensors} 
-          collisionDetection={closestCenter} 
+          sensors={sensors}
+          collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}
         >
           <SortableContext 
-            items={layout.widgets.map(w => w.id)} 
+            items={layout.widgets.map(w => w.id)}
             strategy={verticalListSortingStrategy}
           >
-            {layout.widgets.map((widget) => (
-              <SortableItem 
-                key={widget.id} 
-                widget={widget} 
-                onToggle={handleToggleVisibility} 
-              />
-            ))}
+            <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+              {layout.widgets.map((widget) => (
+                <SortableItem key={widget.id} widget={widget} onToggle={handleToggleVisibility} />
+              ))}
+            </div>
           </SortableContext>
         </DndContext>
       </div>

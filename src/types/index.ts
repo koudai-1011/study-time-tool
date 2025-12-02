@@ -19,6 +19,7 @@ export interface Settings {
   defaultCategoryId?: number;
   dashboardLayout?: DashboardLayout;
   isDarkMode?: boolean;
+  showDailyGoalLine?: boolean;
 }
 
 export type DashboardWidgetType = 'start_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';

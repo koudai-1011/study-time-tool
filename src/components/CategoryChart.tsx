@@ -44,9 +44,9 @@ export const CategoryChart: React.FC = () => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-100 text-sm">
-          <p className="font-bold text-slate-700">{data.name}</p>
-          <p className="text-slate-500">
+        <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-100 dark:border-slate-700 text-sm">
+          <p className="font-bold text-slate-700 dark:text-slate-200">{data.name}</p>
+          <p className="text-slate-500 dark:text-slate-400">
             {formatTimeJapanese(data.value / 3600)}
           </p>
         </div>
@@ -57,15 +57,15 @@ export const CategoryChart: React.FC = () => {
 
   if (data.length === 0 || (data.length === 1 && data[0].name === '残り')) {
     return (
-      <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
-        <p className="text-slate-400">学習データがまだありません</p>
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center min-h-[300px]">
+        <p className="text-slate-400 dark:text-slate-500">学習データがまだありません</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm">
-      <h3 className="text-lg font-bold text-slate-800 mb-6">学習時間の内訳</h3>
+    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-700 shadow-sm">
+      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">学習時間の内訳</h3>
       <div className="h-[300px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -89,7 +89,7 @@ export const CategoryChart: React.FC = () => {
               height={36} 
               iconType="circle"
               formatter={(value) => (
-                <span className="text-slate-600 text-sm ml-1">{value}</span>
+                <span className="text-slate-600 dark:text-slate-400 text-sm ml-1">{value}</span>
               )}
             />
           </PieChart>

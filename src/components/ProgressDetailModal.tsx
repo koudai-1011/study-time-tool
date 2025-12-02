@@ -8,7 +8,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  ReferenceLine
 } from 'recharts';
 import { format, subDays, eachDayOfInterval, startOfDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -33,7 +34,12 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const data = days.map(day => {
+  // Calculate daily goal: total progress should reach 100% by end date
+  // Daily goal is 100% / total days
+  const totalDays = days.length;
+  const dailyGoalProgress = totalDays > 0 ? 100 / totalDays : 0;
+
+  const data = days.map((day, index) => {
     // Calculate cumulative study time up to this day
     const cumulativeSeconds = logs
       .filter(log => {
@@ -45,11 +51,15 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
     const cumulativeHours = cumulativeSeconds / 3600;
     const progress = Math.min(100, (cumulativeHours / settings.targetHours) * 100);
 
+    // Expected cumulative progress by this day (index + 1 because day 1 should have 1 day's worth)
+    const expectedProgress = dailyGoalProgress * (index + 1);
+
     return {
       date: format(day, 'M/d', { locale: ja }),
       fullDate: format(day, 'yyyy年M月d日', { locale: ja }),
       progress: parseFloat(progress.toFixed(1)),
       hours: parseFloat(cumulativeHours.toFixed(1)),
+      dailyGoal: parseFloat(expectedProgress.toFixed(1)),
     };
   });
 
@@ -122,6 +132,25 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
                   labelStyle={{ color: '#64748b', marginBottom: '4px', fontSize: '12px' }}
                   formatter={(value: number) => [`${value}%`, '進捗率']}
                 />
+                {settings.showDailyGoalLine && (
+                  <ReferenceLine 
+                    y={0} 
+                    stroke="#f59e0b" 
+                    strokeDasharray="5 5" 
+                    strokeWidth={2}
+                    label={{ 
+                      value: '目標ライン', 
+                      position: 'insideTopRight',
+                      fill: '#f59e0b',
+                      fontSize: 12,
+                      fontWeight: 'bold'
+                    }}
+                    segment={[
+                      { x: data[0]?.date || '', y: data[0]?.dailyGoal || 0 },
+                      { x: data[data.length - 1]?.date || '', y: data[data.length - 1]?.dailyGoal || 0 }
+                    ]}
+                  />
+                )}
                 <Area
                   type="monotone"
                   dataKey="progress"

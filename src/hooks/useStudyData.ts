@@ -25,6 +25,7 @@ export const useStudyData = (user: User | null) => {
     startDate: '', 
     endDate: '',
     categories: DEFAULT_CATEGORIES,
+    showDailyGoalLine: true,
     dashboardLayout: {
       widgets: [
         { id: 'start_timer', visible: true, order: 0 },

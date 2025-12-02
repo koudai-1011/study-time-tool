@@ -9,7 +9,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Cell
+  Cell,
+  ReferenceLine
 } from 'recharts';
 import { format, subDays, eachDayOfInterval, startOfDay, isSameDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -34,6 +35,10 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
   }
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
+
+  // Calculate daily goal: targetHours / total days
+  const totalDays = days.length;
+  const dailyGoalHours = totalDays > 0 ? settings.targetHours / totalDays : 0;
 
   const data = days.map(day => {
     const dailySeconds = logs
@@ -115,6 +120,21 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                     '学習時間'
                   ]}
                 />
+                {settings.showDailyGoalLine && (
+                  <ReferenceLine 
+                    y={dailyGoalHours} 
+                    stroke="#f59e0b" 
+                    strokeDasharray="5 5" 
+                    strokeWidth={2}
+                    label={{ 
+                      value: `目標: ${formatTimeJapanese(dailyGoalHours)}/日`, 
+                      position: 'insideTopRight',
+                      fill: '#f59e0b',
+                      fontSize: 12,
+                      fontWeight: 'bold'
+                    }}
+                  />
+                )}
                 <Bar 
                   dataKey="hours" 
                   radius={[4, 4, 0, 0]}
