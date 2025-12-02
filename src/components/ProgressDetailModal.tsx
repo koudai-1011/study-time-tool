@@ -21,10 +21,17 @@ interface ProgressDetailModalProps {
 export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClose }) => {
   const { logs, settings } = useStudy();
 
-  // Generate data for the last 30 days
+  // Generate data based on settings or default to last 30 days
   const today = startOfDay(new Date());
-  const startDate = subDays(today, 29);
-  const days = eachDayOfInterval({ start: startDate, end: today });
+  let startDate = subDays(today, 29);
+  let endDate = today;
+
+  if (settings.startDate && settings.endDate) {
+    startDate = startOfDay(parseISO(settings.startDate));
+    endDate = startOfDay(parseISO(settings.endDate));
+  }
+
+  const days = eachDayOfInterval({ start: startDate, end: endDate });
 
   const data = days.map(day => {
     // Calculate cumulative study time up to this day

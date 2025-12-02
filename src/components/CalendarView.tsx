@@ -40,9 +40,6 @@ export const CalendarView: React.FC = () => {
   return (
     <div className="space-y-8">
       <header className="mb-8">
-        <h2 className="text-3xl font-bold text-slate-800 mb-2">学習履歴</h2>
-        <p className="text-slate-500">日々の学習履歴を確認できます。</p>
-        
         <div className="flex items-center justify-between mt-6">
           <button
             onClick={handlePrevMonth}
