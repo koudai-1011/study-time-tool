@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { CalendarView } from './CalendarView';
-import { TrendingUp, Clock, ChevronRight } from 'lucide-react';
+import { TrendingUp, Clock, ChevronRight, ChevronDown } from 'lucide-react';
 import { ProgressDetailModal } from './ProgressDetailModal';
 import { StudyTimeDetailModal } from './StudyTimeDetailModal';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const HistoryScreen: React.FC = () => {
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showStudyTimeModal, setShowStudyTimeModal] = useState(false);
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   return (
     <div className="space-y-6 pb-20">
@@ -20,42 +22,75 @@ export const HistoryScreen: React.FC = () => {
         <CalendarView />
       </section>
 
-      {/* Analytics Section */}
-      <section>
-        <h3 className="text-xl font-bold text-slate-800 mb-4">詳細分析</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button
-            onClick={() => setShowProgressModal(true)}
-            className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:scale-110 transition-transform">
-                <TrendingUp size={24} />
-              </div>
-              <div className="text-left">
-                <h4 className="font-bold text-slate-800">進捗率の推移</h4>
-                <p className="text-xs text-slate-500">目標達成度の変化を確認</p>
-              </div>
+      {/* Analytics Section (Accordion) */}
+      <section className="bg-white rounded-3xl border border-slate-100 overflow-hidden">
+        <button
+          onClick={() => setIsAnalyticsOpen(!isAnalyticsOpen)}
+          className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-50 text-indigo-600 rounded-xl">
+              <TrendingUp size={20} />
             </div>
-            <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors" />
-          </button>
+            <div className="text-left">
+              <h3 className="text-lg font-bold text-slate-800">詳細分析</h3>
+              <p className="text-xs text-slate-500">グラフで推移を確認</p>
+            </div>
+          </div>
+          <motion.div
+            animate={{ rotate: isAnalyticsOpen ? 180 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChevronDown className="text-slate-400" />
+          </motion.div>
+        </button>
 
-          <button
-            onClick={() => setShowStudyTimeModal(true)}
-            className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group"
-          >
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl group-hover:scale-110 transition-transform">
-                <Clock size={24} />
+        <AnimatePresence>
+          {isAnalyticsOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+              <div className="p-6 pt-0 border-t border-slate-100">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                  <button
+                    onClick={() => setShowProgressModal(true)}
+                    className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-blue-100 text-blue-600 rounded-xl group-hover:scale-110 transition-transform">
+                        <TrendingUp size={24} />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-slate-800">進捗率の推移</h4>
+                        <p className="text-xs text-slate-500">目標達成度の変化を確認</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors" />
+                  </button>
+
+                  <button
+                    onClick={() => setShowStudyTimeModal(true)}
+                    className="bg-slate-50 p-4 rounded-2xl border border-slate-100 hover:bg-white hover:shadow-md transition-all flex items-center justify-between group"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-emerald-100 text-emerald-600 rounded-xl group-hover:scale-110 transition-transform">
+                        <Clock size={24} />
+                      </div>
+                      <div className="text-left">
+                        <h4 className="font-bold text-slate-800">学習時間の推移</h4>
+                        <p className="text-xs text-slate-500">日々の学習量を確認</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
+                  </button>
+                </div>
               </div>
-              <div className="text-left">
-                <h4 className="font-bold text-slate-800">学習時間の推移</h4>
-                <p className="text-xs text-slate-500">日々の学習量を確認</p>
-              </div>
-            </div>
-            <ChevronRight className="text-slate-300 group-hover:text-emerald-500 transition-colors" />
-          </button>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </section>
 
       {/* Modals */}
