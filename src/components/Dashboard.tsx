@@ -62,8 +62,8 @@ export const Dashboard: React.FC = () => {
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <header className="col-span-1 md:col-span-2 lg:col-span-4 mb-4">
-          <h2 className="text-3xl font-bold text-slate-800">ダッシュボード</h2>
-          <p className="text-slate-500 mt-2">進捗を確認して、集中力を維持しましょう。</p>
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">ダッシュボード</h2>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">進捗を確認して、集中力を維持しましょう。</p>
         </header>
 
         {/* Dynamic Widgets */}
@@ -76,7 +76,7 @@ export const Dashboard: React.FC = () => {
                   <motion.button
                     key="start_timer"
                     onClick={() => setFullscreenTimer(true)}
-                    className="col-span-1 md:col-span-2 lg:col-span-4 w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 text-white font-bold py-6 rounded-2xl shadow-xl shadow-primary-600/30 transition-all flex items-center justify-center gap-3 text-lg"
+                    className="col-span-1 md:col-span-2 lg:col-span-4 w-full bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 dark:from-primary-500 dark:to-primary-600 dark:hover:from-primary-600 dark:hover:to-primary-700 text-white font-bold py-6 rounded-2xl shadow-xl shadow-primary-600/30 dark:shadow-primary-500/20 transition-all flex items-center justify-center gap-3 text-lg"
                     whileHover={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(59, 130, 246, 0.5)' }}
                     whileTap={{ scale: 0.98 }}
                     initial={{ opacity: 0, y: -20 }}
@@ -92,13 +92,13 @@ export const Dashboard: React.FC = () => {
                 return (
                   <motion.div
                     key="progress"
-                    className="col-span-1 md:col-span-2 lg:col-span-4 bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                    className="col-span-1 md:col-span-2 lg:col-span-4 bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
                     onClick={() => setShowProgressModal(true)}
                   >
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">全体の進捗</h3>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">全体の進捗</h3>
 
                     <div className="relative pt-4">
                       <div className="flex mb-2 items-center justify-between">
@@ -119,7 +119,7 @@ export const Dashboard: React.FC = () => {
                           className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-500 transition-all duration-1000 ease-out"
                         ></div>
                       </div>
-                      <p className="text-sm text-slate-500 text-center">
+                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
                         順調です！目標の{settings.targetHours}時間達成に向けて頑張りましょう。
                       </p>
                     </div>

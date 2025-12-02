@@ -12,7 +12,7 @@ interface StatCardProps {
 
 export const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtext, color, onClick }) => (
   <motion.div
-    className={`bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
+    className={`bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
     onClick={onClick}
     whileHover={{ scale: 1.05, y: -5 }}
     transition={{ type: 'spring', stiffness: 400, damping: 25 }}
@@ -26,15 +26,15 @@ export const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtext,
     >
       {icon}
     </motion.div>
-    <p className="text-slate-500 text-sm font-medium">{label}</p>
+    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{label}</p>
     <motion.h3
-      className="text-2xl font-bold text-slate-800 mt-1"
+      className="text-2xl font-bold text-slate-800 dark:text-slate-100 mt-1"
       key={value}
       initial={{ opacity: 0, scale: 0.5 }}
       animate={{ opacity: 1, scale: 1 }}
     >
       {value}
     </motion.h3>
-    <p className="text-xs text-slate-400 mt-1">{subtext}</p>
+    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{subtext}</p>
   </motion.div>
 );

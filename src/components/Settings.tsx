@@ -37,8 +37,8 @@ export const Settings: React.FC = () => {
   return (
     <div className="space-y-4 pb-20 md:pb-0">
       <header className="mb-6">
-        <h2 className="text-3xl font-bold text-slate-800">設定</h2>
-        <p className="text-slate-500 mt-2">アプリの各種設定を行います。</p>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">設定</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-2">アプリの各種設定を行います。</p>
       </header>
 
       <div className="space-y-3">
@@ -47,7 +47,7 @@ export const Settings: React.FC = () => {
           return (
             <motion.div
               key={section.id}
-              className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm"
+              className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm"
               initial={false}
             >
               {/* Accordion Header */}
@@ -57,12 +57,12 @@ export const Settings: React.FC = () => {
                 whileHover={{ backgroundColor: 'rgb(248 250 252)' }}
                 whileTap={{ scale: 0.99 }}
               >
-                <h3 className="text-lg font-bold text-slate-800">{section.title}</h3>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{section.title}</h3>
                 <motion.div
                   animate={{ rotate: isExpanded ? 180 : 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <ChevronDown size={20} className="text-slate-400" />
+                  <ChevronDown size={20} className="text-slate-400 dark:text-slate-500" />
                 </motion.div>
               </motion.button>
 
@@ -75,7 +75,7 @@ export const Settings: React.FC = () => {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2, ease: 'easeInOut' }}
                   >
-                    <div className="px-5 pb-5 pt-2 border-t border-slate-100">
+                    <div className="px-5 pb-5 pt-2 border-t border-slate-100 dark:border-slate-700">
                       {section.component}
                     </div>
                   </motion.div>

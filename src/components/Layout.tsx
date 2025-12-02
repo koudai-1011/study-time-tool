@@ -64,18 +64,18 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
       {/* Sidebar */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-100 shadow-sm">
+      <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 shadow-sm">
         <motion.div
-          className="p-6 border-b border-slate-100"
+          className="p-6 border-b border-slate-100 dark:border-slate-700"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
           <div className="flex items-center gap-2">
-            <Clock className="text-primary-600" size={28} />
-            <h1 className="text-xl font-bold text-slate-800">学習記録</h1>
+            <Clock className="text-primary-600 dark:text-primary-400" size={28} />
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">学習記録</h1>
           </div>
         </motion.div>
 
@@ -103,14 +103,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
 
       {/* Mobile Header */}
       <motion.div
-        className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-100 shadow-sm z-10 flex items-center justify-center"
+        className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 shadow-sm z-10 flex items-center justify-center"
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       >
         <div className="flex items-center gap-2">
-          <Clock className="text-primary-600" size={24} />
-          <h1 className="text-lg font-bold text-slate-800">学習記録</h1>
+          <Clock className="text-primary-600 dark:text-primary-400" size={24} />
+          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">学習記録</h1>
         </div>
       </motion.div>
 
@@ -134,7 +134,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
 
       {/* Mobile Navigation */}
       <motion.nav
-        className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white border-t border-slate-100 shadow-lg flex items-center justify-around px-4 pb-safe"
+        className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shadow-lg flex items-center justify-around px-4 pb-safe"
         initial={{ y: 100 }}
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -166,8 +166,8 @@ const NavItem = ({ icon, label, isActive, onClick }: { icon: React.ReactNode, la
   <motion.button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${isActive
-        ? 'bg-primary-50 text-primary-700 shadow-sm'
-        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+        ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 shadow-sm'
+        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
       }`}
     whileHover={{ scale: 1.02, x: 4 }}
     whileTap={{ scale: 0.98 }}
@@ -182,8 +182,8 @@ const MobileNavItem = ({ icon, label, isActive, onClick }: { icon: React.ReactNo
   <motion.button
     onClick={onClick}
     className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-all ${isActive
-        ? 'text-primary-600'
-        : 'text-slate-400'
+        ? 'text-primary-600 dark:text-primary-400'
+        : 'text-slate-400 dark:text-slate-500'
       }`}
     whileTap={{ scale: 0.9 }}
     transition={{ type: 'spring', stiffness: 400, damping: 25 }}

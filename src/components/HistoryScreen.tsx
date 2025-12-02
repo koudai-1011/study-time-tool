@@ -13,8 +13,8 @@ export const HistoryScreen: React.FC = () => {
   return (
     <div className="space-y-6 pb-20">
       <header>
-        <h2 className="text-3xl font-bold text-slate-800">学習履歴</h2>
-        <p className="text-slate-500 mt-2">これまでの学習記録と分析データを確認できます。</p>
+        <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">学習履歴</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-2">これまでの学習記録と分析データを確認できます。</p>
       </header>
 
       {/* Calendar Section */}
@@ -23,7 +23,7 @@ export const HistoryScreen: React.FC = () => {
       </section>
 
       {/* Analytics Section (Accordion) */}
-      <section className="bg-white rounded-3xl border border-slate-100 overflow-hidden">
+      <section className="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 overflow-hidden">
         <button
           onClick={() => setIsAnalyticsOpen(!isAnalyticsOpen)}
           className="w-full p-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
@@ -33,15 +33,15 @@ export const HistoryScreen: React.FC = () => {
               <TrendingUp size={20} />
             </div>
             <div className="text-left">
-              <h3 className="text-lg font-bold text-slate-800">詳細分析</h3>
-              <p className="text-xs text-slate-500">グラフで推移を確認</p>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">詳細分析</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">グラフで推移を確認</p>
             </div>
           </div>
           <motion.div
             animate={{ rotate: isAnalyticsOpen ? 180 : 0 }}
             transition={{ duration: 0.3 }}
           >
-            <ChevronDown className="text-slate-400" />
+            <ChevronDown className="text-slate-400 dark:text-slate-500" />
           </motion.div>
         </button>
 
@@ -53,7 +53,7 @@ export const HistoryScreen: React.FC = () => {
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
-              <div className="p-6 pt-0 border-t border-slate-100">
+              <div className="p-6 pt-0 border-t border-slate-100 dark:border-slate-700">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                   <button
                     onClick={() => setShowProgressModal(true)}
@@ -64,8 +64,8 @@ export const HistoryScreen: React.FC = () => {
                         <TrendingUp size={24} />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-bold text-slate-800">進捗率の推移</h4>
-                        <p className="text-xs text-slate-500">目標達成度の変化を確認</p>
+                        <h4 className="font-bold text-slate-800 dark:text-slate-100">進捗率の推移</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">目標達成度の変化を確認</p>
                       </div>
                     </div>
                     <ChevronRight className="text-slate-300 group-hover:text-blue-500 transition-colors" />
@@ -80,8 +80,8 @@ export const HistoryScreen: React.FC = () => {
                         <Clock size={24} />
                       </div>
                       <div className="text-left">
-                        <h4 className="font-bold text-slate-800">学習時間の推移</h4>
-                        <p className="text-xs text-slate-500">日々の学習量を確認</p>
+                        <h4 className="font-bold text-slate-800 dark:text-slate-100">学習時間の推移</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">日々の学習量を確認</p>
                       </div>
                     </div>
                     <ChevronRight className="text-slate-300 group-hover:text-emerald-500 transition-colors" />

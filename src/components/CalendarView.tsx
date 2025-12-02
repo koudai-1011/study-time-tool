@@ -43,26 +43,26 @@ export const CalendarView: React.FC = () => {
         <div className="flex items-center justify-between mt-6">
           <button
             onClick={handlePrevMonth}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            <ChevronLeft className="text-slate-600" />
+            <ChevronLeft className="text-slate-600 dark:text-slate-400" />
           </button>
-          <h3 className="text-xl font-bold text-slate-700">
+          <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200">
             {format(currentMonth, 'yyyy年M月', { locale: ja })}
           </h3>
           <button
             onClick={handleNextMonth}
-            className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
           >
-            <ChevronRight className="text-slate-600" />
+            <ChevronRight className="text-slate-600 dark:text-slate-400" />
           </button>
         </div>
       </header>
 
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-8">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 p-4 md:p-8">
         <div className="grid grid-cols-7 gap-2 md:gap-4 mb-4">
           {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-            <div key={day} className="text-center text-xs md:text-sm font-semibold text-slate-400 uppercase tracking-wider">
+            <div key={day} className="text-center text-xs md:text-sm font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               {day}
             </div>
           ))}
