@@ -9,9 +9,14 @@ interface SabotageModalProps {
 }
 
 export const SabotageModal: React.FC<SabotageModalProps> = ({ onClose, dailyGoalHours }) => {
-  const { setIsSwipeEnabled } = useStudy();
+  const { setIsSwipeEnabled, daysRemaining } = useStudy();
   const [sabotageHours, setSabotageHours] = useState(1);
-  const [recoveryDays, setRecoveryDays] = useState(30);
+  const [recoveryDays, setRecoveryDays] = useState(() => {
+    if (daysRemaining > 0) {
+      return Math.min(daysRemaining, 100);
+    }
+    return 30;
+  });
 
   // Disable swipe when modal is open
   useEffect(() => {
