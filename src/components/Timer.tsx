@@ -182,10 +182,10 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="fixed inset-0 z-50 bg-gradient-to-br from-primary-50 via-white to-primary-100 flex flex-col items-center justify-center p-4 overflow-hidden"
+          className="fixed inset-0 z-50 bg-gradient-to-br from-primary-50 via-white to-primary-100 flex flex-col items-center justify-center p-4 overflow-hidden h-[100dvh] w-screen touch-none overscroll-none"
           style={{ willChange: 'opacity, transform' }}
           onTouchStart={(e) => e.stopPropagation()}
-          onTouchMove={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.preventDefault()}
         >
           <button
             onClick={handleCloseClick}
