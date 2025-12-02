@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock } from 'lucide-react';
 import {
@@ -22,7 +22,13 @@ interface StudyTimeDetailModalProps {
 }
 
 export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onClose }) => {
-  const { logs, settings } = useStudy();
+  const { logs, settings, setIsSwipeEnabled } = useStudy();
+
+  // Disable swipe when modal is open
+  useEffect(() => {
+    setIsSwipeEnabled(false);
+    return () => setIsSwipeEnabled(true);
+  }, [setIsSwipeEnabled]);
 
   // Generate data based on settings or default to last 30 days
   const today = startOfDay(new Date());
@@ -120,6 +126,18 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                     '学習時間'
                   ]}
                 />
+                <Bar 
+                  dataKey="hours" 
+                  radius={[4, 4, 0, 0]}
+                  animationDuration={1500}
+                >
+                  {data.map((entry, index) => (
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={entry.rawSeconds > 0 ? '#00afcc' : '#e2e8f0'} 
+                    />
+                  ))}
+                </Bar>
                 {settings.showDailyGoalLine && (
                   <ReferenceLine 
                     y={dailyGoalHours} 
@@ -135,18 +153,6 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                     }}
                   />
                 )}
-                <Bar 
-                  dataKey="hours" 
-                  radius={[4, 4, 0, 0]}
-                  animationDuration={1500}
-                >
-                  {data.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={entry.rawSeconds > 0 ? '#00afcc' : '#e2e8f0'} 
-                    />
-                  ))}
-                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>

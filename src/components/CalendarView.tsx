@@ -104,7 +104,7 @@ export const CalendarView: React.FC = () => {
                 }}
               >
                 <span className={`text-sm font-medium mb-1 ${
-                  isToday ? 'bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md' : 'text-slate-600'
+                  isToday ? 'bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md' : 'text-slate-600 dark:text-slate-300'
                 }`}>
                   {format(day, 'd')}
                 </span>
@@ -126,7 +126,7 @@ export const CalendarView: React.FC = () => {
                       </div>
                     )}
                     <div
-                      className="absolute bottom-0 left-0 right-0 h-1 bg-primary-500 rounded-b-2xl"
+                      className="absolute bottom-0 inset-x-0.5 h-1 bg-primary-500 rounded-b-2xl"
                       style={{ opacity: 0.2 + (intensity * 0.8) }}
                     />
                   </>

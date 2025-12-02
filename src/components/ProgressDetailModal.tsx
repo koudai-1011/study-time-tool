@@ -1,15 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, TrendingUp } from 'lucide-react';
 import {
   Area,
-  AreaChart,
+  ComposedChart,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine
+  Line
 } from 'recharts';
 import { format, subDays, eachDayOfInterval, startOfDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -20,7 +20,13 @@ interface ProgressDetailModalProps {
 }
 
 export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClose }) => {
-  const { logs, settings } = useStudy();
+  const { logs, settings, setIsSwipeEnabled } = useStudy();
+
+  // Disable swipe when modal is open
+  useEffect(() => {
+    setIsSwipeEnabled(false);
+    return () => setIsSwipeEnabled(true);
+  }, [setIsSwipeEnabled]);
 
   // Generate data based on settings or default to last 30 days
   const today = startOfDay(new Date());
@@ -99,7 +105,7 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
 
           <div className="p-6 h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorProgress" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -133,22 +139,14 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
                   formatter={(value: number) => [`${value}%`, '進捗率']}
                 />
                 {settings.showDailyGoalLine && (
-                  <ReferenceLine 
-                    y={0} 
-                    stroke="#f59e0b" 
-                    strokeDasharray="5 5" 
+                  <Line
+                    type="monotone"
+                    dataKey="dailyGoal"
+                    stroke="#f59e0b"
                     strokeWidth={2}
-                    label={{ 
-                      value: '目標ライン', 
-                      position: 'insideTopRight',
-                      fill: '#f59e0b',
-                      fontSize: 12,
-                      fontWeight: 'bold'
-                    }}
-                    segment={[
-                      { x: data[0]?.date || '', y: data[0]?.dailyGoal || 0 },
-                      { x: data[data.length - 1]?.date || '', y: data[data.length - 1]?.dailyGoal || 0 }
-                    ]}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="目標ライン"
                   />
                 )}
                 <Area
@@ -160,7 +158,7 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
                   fill="url(#colorProgress)"
                   animationDuration={1500}
                 />
-              </AreaChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
