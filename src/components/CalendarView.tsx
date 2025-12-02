@@ -110,7 +110,7 @@ export const CalendarView: React.FC = () => {
 
                 {hasStudy && (
                   <>
-                    <span className="text-[10px] md:text-xs font-bold text-primary-600 dark:text-primary-400 w-full text-center px-0.5 leading-tight">
+                    <span className="text-[10px] md:text-xs font-bold text-primary-600 dark:text-primary-400 w-full text-center px-0.5 mb-0.5 block">
                       {(() => {
                         const h = Math.floor(hours);
                         const m = Math.round((hours - h) * 60);
@@ -120,7 +120,7 @@ export const CalendarView: React.FC = () => {
                       })()}
                     </span>
                     {categoryColors.length > 0 && (
-                      <div className="flex gap-0.5 mt-1">
+                      <div className="flex gap-0.5 mb-1">
                         {categoryColors.slice(0, 3).map((color, i) => (
                           <div
                             key={i}
