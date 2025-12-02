@@ -88,7 +88,7 @@ export const CalendarView: React.FC = () => {
               <motion.button 
                 key={day.toISOString()}
                 onClick={() => setSelectedDate(day.toISOString())}
-                className={`aspect-square min-h-[80px] md:min-h-0 rounded-2xl flex flex-col items-center justify-center relative group transition-all border overflow-hidden ${
+                className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all border overflow-hidden p-1 ${
                   hasStudy ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-100 dark:border-primary-800' : 'bg-slate-50 dark:bg-slate-700/50 border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                 } ${isToday ? 'ring-2 ring-primary-500' : ''}`}
                 whileHover={{ scale: 1.1, y: -5 }}
@@ -102,7 +102,7 @@ export const CalendarView: React.FC = () => {
                   damping: 25
                 }}
               >
-                <span className={`text-sm font-medium mb-1 ${
+                <span className={`text-sm font-medium ${
                   isToday ? 'bg-primary-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-md' : 'text-slate-600 dark:text-slate-200'
                 }`}>
                   {format(day, 'd')}
@@ -110,26 +110,28 @@ export const CalendarView: React.FC = () => {
 
                 {hasStudy && (
                   <>
-                    <span className="text-[10px] md:text-xs font-bold text-primary-600 dark:text-primary-400 w-full text-center px-0.5 mb-0.5 block">
-                      {(() => {
-                        const h = Math.floor(hours);
-                        const m = Math.round((hours - h) * 60);
-                        if (h > 0 && m > 0) return `${h}h${m}`;
-                        if (h > 0) return `${h}h`;
-                        return `${m}m`;
-                      })()}
-                    </span>
-                    {categoryColors.length > 0 && (
-                      <div className="flex gap-0.5 mb-1">
-                        {categoryColors.slice(0, 3).map((color, i) => (
-                          <div
-                            key={i}
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: color as string }}
-                          />
-                        ))}
-                      </div>
-                    )}
+                    <div className="flex flex-col items-center gap-0.5 mt-auto mb-1">
+                      <span className="text-[9px] md:text-[10px] font-semibold text-primary-600 dark:text-primary-400">
+                        {(() => {
+                          const h = Math.floor(hours);
+                          const m = Math.round((hours - h) * 60);
+                          if (h > 0 && m > 0) return `${h}h${m}`;
+                          if (h > 0) return `${h}h`;
+                          return `${m}m`;
+                        })()}
+                      </span>
+                      {categoryColors.length > 0 && (
+                        <div className="flex gap-0.5">
+                          {categoryColors.slice(0, 3).map((color, i) => (
+                            <div
+                              key={i}
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: color as string }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <div
                       className="absolute bottom-0 inset-x-0.5 h-1 bg-primary-500 rounded-b-2xl"
                       style={{ opacity: 0.2 + (intensity * 0.8) }}
