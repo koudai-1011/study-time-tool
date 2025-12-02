@@ -9,7 +9,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  Line,
   ComposedChart
 } from 'recharts';
 import { format, subDays, eachDayOfInterval, startOfDay, isSameDay, parseISO } from 'date-fns';
@@ -42,30 +41,18 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-  // Calculate dynamic daily goal
-  let cumulativeStudiedHours = 0;
   const data = days.map((day, index) => {
     const dailySeconds = logs
       .filter(log => isSameDay(parseISO(log.date), day))
       .reduce((acc, log) => acc + log.duration, 0);
     
     const dailyHours = dailySeconds / 3600;
-    
-    // Calculate required daily goal for this specific day
-    // Formula: (Target - Cumulative so far) / Remaining days including today
-    const remainingTarget = Math.max(0, settings.targetHours - cumulativeStudiedHours);
-    const remainingDays = days.length - index;
-    const requiredDailyHours = remainingDays > 0 ? remainingTarget / remainingDays : 0;
-
-    // Update cumulative for next iteration
-    cumulativeStudiedHours += dailyHours;
 
     return {
       date: format(day, 'M/d', { locale: ja }),
       fullDate: format(day, 'yyyy年M月d日', { locale: ja }),
       hours: parseFloat(dailyHours.toFixed(1)),
       rawSeconds: dailySeconds,
-      dynamicGoal: parseFloat(requiredDailyHours.toFixed(1))
     };
   });
 
@@ -132,7 +119,6 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                   }}
                   labelStyle={{ color: '#64748b', marginBottom: '4px', fontSize: '12px' }}
                   formatter={(value: number, name: string) => {
-                    if (name === 'dynamicGoal') return [formatTimeJapanese(value), '目標ライン'];
                     return [formatTimeJapanese(value), '学習時間'];
                   }}
                 />
@@ -148,17 +134,6 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                     />
                   ))}
                 </Bar>
-                {settings.showDailyGoalLine && (
-                  <Line
-                    type="linear"
-                    dataKey="dynamicGoal"
-                    stroke="#f59e0b"
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="目標ライン"
-                  />
-                )}
               </ComposedChart>
             </ResponsiveContainer>
           </div>

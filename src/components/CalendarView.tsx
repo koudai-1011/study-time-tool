@@ -14,7 +14,6 @@ import {
 import { ja } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
-import { formatTimeJapanese } from '../utils/timeFormat';
 import { DayDetailModal } from './DayDetailModal';
 
 export const CalendarView: React.FC = () => {
@@ -112,7 +111,13 @@ export const CalendarView: React.FC = () => {
                 {hasStudy && (
                   <>
                     <span className="text-[10px] md:text-xs font-bold text-primary-600 dark:text-primary-400 truncate w-full text-center px-0.5">
-                      {formatTimeJapanese(hours)}
+                      {(() => {
+                        const h = Math.floor(hours);
+                        const m = Math.round((hours - h) * 60);
+                        if (h > 0 && m > 0) return `${h}h${m}`;
+                        if (h > 0) return `${h}h`;
+                        return `${m}m`;
+                      })()}
                     </span>
                     {categoryColors.length > 0 && (
                       <div className="flex gap-0.5 mt-1">

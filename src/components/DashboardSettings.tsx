@@ -163,10 +163,8 @@ export const DashboardSettings: React.FC = () => {
 
         <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
           <div>
-            <h4 className="font-medium text-slate-700 dark:text-slate-200">目標ラインを表示</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              進捗率と学習時間の推移チャートに1日の目標ラインを表示します
-            </p>
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-200">目標ラインを表示</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">進捗率の推移グラフに目標ラインを表示します</p>
           </div>
           <button
             onClick={() => {
