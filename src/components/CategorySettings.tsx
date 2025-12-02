@@ -25,9 +25,9 @@ export const CategorySettings: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8">
-      <h3 className="text-lg font-bold text-slate-800 mb-4">カテゴリー設定</h3>
-      <p className="text-sm text-slate-500 mb-6">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8">
+      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">カテゴリー設定</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
         学習カテゴリーの名前を編集できます。色は固定です。
       </p>
 
@@ -43,7 +43,7 @@ export const CategorySettings: React.FC = () => {
                 type="text"
                 value={category.name}
                 onChange={(e) => handleCategoryNameChange(category.id, e.target.value)}
-                className="flex-1 px-3 py-2 rounded-lg border border-slate-200 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none transition-all"
+                className="flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none transition-all"
                 placeholder={`カテゴリー${category.id + 1}`}
               />
             </div>

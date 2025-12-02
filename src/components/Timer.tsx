@@ -30,9 +30,9 @@ class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: R
   render() {
     if (this.state.hasError) {
       return (
-        <div className="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center p-4">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">エラーが発生しました</h2>
-          <p className="text-slate-600 mb-6">タイマーの表示中に問題が発生しました。</p>
+        <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 flex flex-col items-center justify-center p-4">
+          <h2 className="text-2xl font-bold text-red-600 dark:text-red-400 mb-4">エラーが発生しました</h2>
+          <p className="text-slate-600 dark:text-slate-300 mb-6">タイマーの表示中に問題が発生しました。</p>
           <div className="flex gap-4">
             <button
               onClick={() => window.location.reload()}
@@ -43,7 +43,7 @@ class ErrorBoundary extends React.Component<{ onClose?: () => void; children?: R
             {this.props.onClose && (
               <button
                 onClick={this.props.onClose}
-                className="px-6 py-3 bg-slate-200 text-slate-700 rounded-xl font-bold"
+                className="px-6 py-3 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl font-bold"
               >
                 閉じる
               </button>
@@ -182,27 +182,29 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2, ease: "easeOut" }}
-          className="fixed inset-0 z-50 bg-gradient-to-br from-primary-50 via-white to-primary-100 flex flex-col items-center justify-center p-4 overflow-hidden h-[100dvh] w-screen touch-none overscroll-none"
+          className="fixed inset-0 z-50 bg-gradient-to-br from-primary-50 via-white to-primary-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex flex-col items-center justify-center p-4 overflow-hidden h-[100dvh] w-screen touch-none overscroll-none"
           style={{ willChange: 'opacity, transform' }}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.preventDefault()}
         >
           <button
             onClick={handleCloseClick}
-            className="absolute top-4 right-4 p-3 rounded-full bg-white/80 hover:bg-white shadow-lg transition-all"
+            className="absolute top-4 right-4 p-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 shadow-lg transition-all"
           >
-            <X size={24} className="text-slate-600" />
+            <X size={24} className="text-slate-600 dark:text-slate-300" />
           </button>
 
           <div className="text-center w-full">
             <div className="mb-6">
-              <p className="text-sm text-slate-600 mb-2">選択中: {settings.categories.find(c => c.id === selectedCategory)?.name ?? '未選択'}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">選択中: {settings.categories.find(c => c.id === selectedCategory)?.name ?? '未選択'}</p>
               <div>
                 <CategorySelector compact />
               </div>
             </div>
 
-            <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 font-mono tracking-wider mb-8 md:mb-12 tabular-nums" style={{ willChange: 'transform, opacity' }}>
+            </div>
+            
+            <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wider mb-8 md:mb-12 tabular-nums" style={{ willChange: 'transform, opacity' }}>
               <span className="tabular-nums inline-block">{formatTime(elapsed)}</span>
             </div>
 
@@ -228,7 +230,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
               <button
                 onClick={handleStop}
                 disabled={elapsed === 0}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 md:p-6 rounded-2xl md:rounded-3xl transition-all active:scale-95"
+                className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 md:p-6 rounded-2xl md:rounded-3xl transition-all active:scale-95"
                 title="終了して保存"
               >
                 <Square fill="currentColor" size={24} className="md:w-8 md:h-8" />
@@ -236,7 +238,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             </div>
 
             {isRunning && (
-              <p className="mt-6 md:mt-8 text-lg md:text-2xl text-primary-600 font-medium">
+              <p className="mt-6 md:mt-8 text-lg md:text-2xl text-primary-600 dark:text-primary-400 font-medium">
                 集中モード中...
               </p>
             )}
@@ -245,11 +247,11 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           {/* Confirmation Modal */}
           {showConfirmModal && (
             <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
-                <h3 className="text-2xl font-bold text-slate-800 mb-4 text-center">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 text-center">
                   保存しますか？
                 </h3>
-                <p className="text-slate-600 mb-8 text-center">
+                <p className="text-slate-600 dark:text-slate-400 mb-8 text-center">
                   {formatTime(elapsed)} の記録があります
                 </p>
                 <div className="space-y-3">
@@ -267,7 +269,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
                   </button>
                   <button
                     onClick={() => setShowConfirmModal(false)}
-                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold py-3 rounded-xl transition-colors"
+                    className="w-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-bold py-3 rounded-xl transition-colors"
                   >
                     キャンセル
                   </button>
@@ -282,12 +284,12 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
   return (
     <ErrorBoundary onClose={onClose}>
-      <div className="bg-white rounded-3xl shadow-xl shadow-primary-900/5 border border-slate-100 p-6 md:p-8 flex flex-col items-center justify-center relative overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl shadow-primary-900/5 border border-slate-100 dark:border-slate-700 p-6 md:p-8 flex flex-col items-center justify-center relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-400 to-primary-600" />
 
         <CategorySelector />
 
-        <div className="text-5xl md:text-7xl font-bold text-slate-800 font-mono tracking-wider mb-8 tabular-nums">
+        <div className="text-5xl md:text-7xl font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wider mb-8 tabular-nums">
           {formatTime(elapsed)}
         </div>
 
@@ -313,7 +315,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           <button
             onClick={handleStop}
             disabled={elapsed === 0}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 rounded-2xl transition-all active:scale-95"
+            className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 rounded-2xl transition-all active:scale-95"
             title="終了して保存"
           >
             <Square fill="currentColor" size={20} className="md:w-6 md:h-6" />
@@ -321,7 +323,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
         </div>
 
         {isRunning && (
-          <p className="mt-6 text-primary-600 font-medium animate-pulse">
+          <p className="mt-6 text-primary-600 dark:text-primary-400 font-medium animate-pulse">
             集中モード中...
           </p>
         )}

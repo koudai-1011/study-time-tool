@@ -25,12 +25,12 @@ export const GoalSettings: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-slate-800">目標設定</h3>
+      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">目標設定</h3>
       
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
         <form onSubmit={handleSave} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
               目標勉強時間 (合計)
             </label>
             <div className="relative">
@@ -38,57 +38,60 @@ export const GoalSettings: React.FC = () => {
                 type="number"
                 value={targetHours}
                 onChange={(e) => setTargetHours(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
                 placeholder="例: 1000"
                 min="0"
+                style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">
                 時間
               </span>
             </div>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               期限までに達成したい合計勉強時間を設定してください。
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
               開始日
             </label>
             <input
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
+              style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
             />
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               学習期間の開始日を設定してください。
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
               終了日
             </label>
             <input
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
+              style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
             />
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               学習期間の終了日（目標達成日）を設定してください。
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
+            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
               デフォルトカテゴリ
             </label>
             <select
               value={settings.defaultCategoryId ?? 0}
               onChange={(e) => updateSettings({ ...settings, defaultCategoryId: Number(e.target.value) })}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 outline-none transition-all text-lg"
             >
               {settings.categories.map(category => (
                 <option key={category.id} value={category.id}>
@@ -96,7 +99,7 @@ export const GoalSettings: React.FC = () => {
                 </option>
               ))}
             </select>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
               タイマー起動時に初期選択されるカテゴリを設定してください。
             </p>
           </div>

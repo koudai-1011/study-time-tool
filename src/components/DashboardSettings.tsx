@@ -57,8 +57,8 @@ const SortableItem: React.FC<SortableItemProps> = ({ widget, onToggle }) => {
     <div 
       ref={setNodeRef} 
       style={style}
-      className={`flex items-center justify-between p-4 border-b border-slate-100 last:border-b-0 bg-white ${
-        !widget.visible ? 'bg-slate-50 opacity-75' : ''
+      className={`flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700 last:border-b-0 bg-white dark:bg-slate-800 ${
+        !widget.visible ? 'bg-slate-50 dark:bg-slate-700/50 opacity-75' : ''
       }`}
     >
       <div className="flex items-center gap-3">
@@ -66,14 +66,14 @@ const SortableItem: React.FC<SortableItemProps> = ({ widget, onToggle }) => {
           onClick={() => onToggle(widget.id)}
           className={`p-2 rounded-lg transition-colors ${
             widget.visible 
-              ? 'bg-primary-50 text-primary-600 hover:bg-primary-100' 
-              : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+              ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/50' 
+              : 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-600'
           }`}
           title={widget.visible ? '非表示にする' : '表示する'}
         >
           {widget.visible ? <Eye size={20} /> : <EyeOff size={20} />}
         </button>
-        <span className={`font-medium ${widget.visible ? 'text-slate-700' : 'text-slate-500'}`}>
+        <span className={`font-medium ${widget.visible ? 'text-slate-700 dark:text-slate-200' : 'text-slate-500 dark:text-slate-400'}`}>
           {WIDGET_LABELS[widget.id]}
         </span>
       </div>
@@ -81,7 +81,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ widget, onToggle }) => {
       <div 
         {...attributes} 
         {...listeners} 
-        className="p-3 text-slate-400 hover:text-primary-600 cursor-grab active:cursor-grabbing touch-none"
+        className="p-3 text-slate-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 cursor-grab active:cursor-grabbing touch-none"
         title="ドラッグして並び替え（長押し）"
       >
         <GripVertical size={20} />
@@ -148,14 +148,14 @@ export const DashboardSettings: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-slate-800">ダッシュボード設定</h3>
-      <p className="text-sm text-slate-500 mb-4">
+      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">ダッシュボード設定</h3>
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
         ダッシュボードに表示する項目の選択と並び替えができます。
         <br />
         <span className="text-xs text-slate-400">※並び替えは右側のアイコンをドラッグ（スマホは長押し）してください</span>
       </p>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
         <DndContext 
           sensors={sensors} 
           collisionDetection={closestCenter} 

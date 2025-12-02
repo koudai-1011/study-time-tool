@@ -43,9 +43,9 @@ export const DataManagement: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-bold text-slate-800">データ管理</h3>
+      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">データ管理</h3>
       
-      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-4">
+      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
         <div>
           <button
             onClick={handleExport}
@@ -54,7 +54,7 @@ export const DataManagement: React.FC = () => {
             <Download size={20} />
             データをエクスポート
           </button>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             設定と学習記録をJSONファイルとしてダウンロードします。
           </p>
         </div>
@@ -70,7 +70,7 @@ export const DataManagement: React.FC = () => {
               className="hidden"
             />
           </label>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             以前エクスポートしたデータファイルを読み込みます。
           </p>
         </div>
@@ -83,7 +83,7 @@ export const DataManagement: React.FC = () => {
             <Trash2 size={20} />
             学習記録をクリア
           </button>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
             すべての学習記録を削除します。設定は保持されます。
           </p>
         </div>

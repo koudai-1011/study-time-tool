@@ -61,22 +61,22 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
           initial={{ scale: 0.9, opacity: 0, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
+          className="bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl"
           onClick={e => e.stopPropagation()}
         >
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+          <div className="p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary-50 rounded-xl text-primary-600">
+              <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-xl text-primary-600 dark:text-primary-400">
                 <Clock size={24} />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-800">学習時間の推移</h2>
-                <p className="text-sm text-slate-500">過去30日間の日別学習時間</p>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">学習時間の推移</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">過去30日間の日別学習時間</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors text-slate-500 dark:text-slate-400"
             >
               <X size={24} />
             </button>
@@ -100,13 +100,14 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                   unit="h"
                 />
                 <Tooltip
-                  cursor={{ fill: '#f1f5f9' }}
+                  cursor={{ fill: settings.isDarkMode ? '#334155' : '#f1f5f9' }}
                   contentStyle={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                    backgroundColor: settings.isDarkMode ? '#1e293b' : 'rgba(255, 255, 255, 0.95)',
                     borderRadius: '12px',
-                    border: 'none',
+                    border: settings.isDarkMode ? '1px solid #334155' : 'none',
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    padding: '12px'
+                    padding: '12px',
+                    color: settings.isDarkMode ? '#f1f5f9' : '#1e293b'
                   }}
                   labelStyle={{ color: '#64748b', marginBottom: '4px', fontSize: '12px' }}
                   formatter={(_value: number, _name: string, props: any) => [
