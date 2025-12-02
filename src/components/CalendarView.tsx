@@ -88,7 +88,7 @@ export const CalendarView: React.FC = () => {
               <motion.button 
                 key={day.toISOString()}
                 onClick={() => setSelectedDate(day.toISOString())}
-                className={`aspect-square rounded-2xl flex flex-col items-center justify-center relative group transition-all border overflow-hidden ${
+                className={`aspect-square min-h-[80px] md:min-h-0 rounded-2xl flex flex-col items-center justify-center relative group transition-all border overflow-hidden ${
                   hasStudy ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-100 dark:border-primary-800' : 'bg-slate-50 dark:bg-slate-700/50 border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                 } ${isToday ? 'ring-2 ring-primary-500' : ''}`}
                 whileHover={{ scale: 1.1, y: -5 }}
