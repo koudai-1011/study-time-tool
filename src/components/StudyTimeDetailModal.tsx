@@ -41,7 +41,7 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const data = days.map((day, index) => {
+  const data = days.map((day) => {
     const dailySeconds = logs
       .filter(log => isSameDay(parseISO(log.date), day))
       .reduce((acc, log) => acc + log.duration, 0);
@@ -118,7 +118,7 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                     color: settings.isDarkMode ? '#f1f5f9' : '#1e293b'
                   }}
                   labelStyle={{ color: '#64748b', marginBottom: '4px', fontSize: '12px' }}
-                  formatter={(value: number, name: string) => {
+                  formatter={(value: number) => {
                     return [formatTimeJapanese(value), '学習時間'];
                   }}
                 />
