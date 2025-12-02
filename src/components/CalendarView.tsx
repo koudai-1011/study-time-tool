@@ -76,7 +76,6 @@ export const CalendarView: React.FC = () => {
           {daysInMonth.map((day, dayIndex) => {
             const hours = getStudyTimeForDay(day);
             const hasStudy = hours > 0;
-            const intensity = Math.min(1, hours / 4);
             const isToday = isSameDay(day, new Date());
             const dayLogs = logs.filter(log => isSameDay(parseISO(log.date), day));
             const categoryColors = [...new Set(dayLogs.map(log => {
