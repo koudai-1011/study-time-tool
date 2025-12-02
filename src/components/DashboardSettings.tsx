@@ -181,7 +181,7 @@ export const DashboardSettings: React.FC = () => {
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                settings.showDailyGoalLine ? 'translate-x-5' : 'translate-x-1'
+                settings.showDailyGoalLine ? 'translate-x-6' : 'translate-x-1'
               }`}
             />
           </button>

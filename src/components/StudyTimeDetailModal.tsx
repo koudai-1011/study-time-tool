@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Clock } from 'lucide-react';
 import {
-  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -10,7 +9,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  ReferenceLine
+  Line,
+  ComposedChart
 } from 'recharts';
 import { format, subDays, eachDayOfInterval, startOfDay, isSameDay, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -42,20 +42,30 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
 
   const days = eachDayOfInterval({ start: startDate, end: endDate });
 
-  // Calculate daily goal: targetHours / total days
-  const totalDays = days.length;
-  const dailyGoalHours = totalDays > 0 ? settings.targetHours / totalDays : 0;
-
-  const data = days.map(day => {
+  // Calculate dynamic daily goal
+  let cumulativeStudiedHours = 0;
+  const data = days.map((day, index) => {
     const dailySeconds = logs
       .filter(log => isSameDay(parseISO(log.date), day))
       .reduce((acc, log) => acc + log.duration, 0);
+    
+    const dailyHours = dailySeconds / 3600;
+    
+    // Calculate required daily goal for this specific day
+    // Formula: (Target - Cumulative so far) / Remaining days including today
+    const remainingTarget = Math.max(0, settings.targetHours - cumulativeStudiedHours);
+    const remainingDays = days.length - index;
+    const requiredDailyHours = remainingDays > 0 ? remainingTarget / remainingDays : 0;
+
+    // Update cumulative for next iteration
+    cumulativeStudiedHours += dailyHours;
 
     return {
       date: format(day, 'M/d', { locale: ja }),
       fullDate: format(day, 'yyyy年M月d日', { locale: ja }),
-      hours: parseFloat((dailySeconds / 3600).toFixed(1)),
+      hours: parseFloat(dailyHours.toFixed(1)),
       rawSeconds: dailySeconds,
+      dynamicGoal: parseFloat(requiredDailyHours.toFixed(1))
     };
   });
 
@@ -95,7 +105,7 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
 
           <div className="p-6 h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <ComposedChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis 
                   dataKey="date" 
@@ -121,10 +131,10 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                     color: settings.isDarkMode ? '#f1f5f9' : '#1e293b'
                   }}
                   labelStyle={{ color: '#64748b', marginBottom: '4px', fontSize: '12px' }}
-                  formatter={(_value: number, _name: string, props: any) => [
-                    formatTimeJapanese(props.payload.hours), 
-                    '学習時間'
-                  ]}
+                  formatter={(value: number, name: string) => {
+                    if (name === 'dynamicGoal') return [formatTimeJapanese(value), '目標ライン'];
+                    return [formatTimeJapanese(value), '学習時間'];
+                  }}
                 />
                 <Bar 
                   dataKey="hours" 
@@ -139,21 +149,17 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                   ))}
                 </Bar>
                 {settings.showDailyGoalLine && (
-                  <ReferenceLine 
-                    y={dailyGoalHours} 
-                    stroke="#f59e0b" 
-                    strokeDasharray="5 5" 
+                  <Line
+                    type="monotone"
+                    dataKey="dynamicGoal"
+                    stroke="#f59e0b"
                     strokeWidth={2}
-                    label={{ 
-                      value: `目標: ${formatTimeJapanese(dailyGoalHours)}/日`, 
-                      position: 'insideTopRight',
-                      fill: '#f59e0b',
-                      fontSize: 12,
-                      fontWeight: 'bold'
-                    }}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="目標ライン"
                   />
                 )}
-              </BarChart>
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
         </motion.div>
