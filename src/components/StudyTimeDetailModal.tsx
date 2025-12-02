@@ -79,7 +79,6 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
               </div>
               <div>
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">学習時間の推移</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">過去30日間の日別学習時間</p>
               </div>
             </div>
             <button
