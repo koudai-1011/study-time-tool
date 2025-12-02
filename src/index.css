@@ -15,8 +15,9 @@
 }
 
 @layer base {
+  /* Remove fixed background to allow dark mode to work */
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply text-slate-900 dark:text-slate-100;
   }
 }
 
