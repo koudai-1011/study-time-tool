@@ -92,7 +92,6 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
               </div>
               <div>
                 <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">進捗率の推移</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">過去30日間の目標達成度</p>
               </div>
             </div>
             <button

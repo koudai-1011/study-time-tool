@@ -175,7 +175,7 @@ export const DashboardSettings: React.FC = () => {
                 showDailyGoalLine: !settings.showDailyGoalLine
               });
             }}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${
               settings.showDailyGoalLine ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
             }`}
           >

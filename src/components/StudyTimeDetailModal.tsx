@@ -150,7 +150,7 @@ export const StudyTimeDetailModal: React.FC<StudyTimeDetailModalProps> = ({ onCl
                 </Bar>
                 {settings.showDailyGoalLine && (
                   <Line
-                    type="monotone"
+                    type="linear"
                     dataKey="dynamicGoal"
                     stroke="#f59e0b"
                     strokeWidth={2}
