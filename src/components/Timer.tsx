@@ -202,7 +202,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
               </div>
             </div>
 
-            </div>
+
             
             <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wider mb-8 md:mb-12 tabular-nums" style={{ willChange: 'transform, opacity' }}>
               <span className="tabular-nums inline-block">{formatTime(elapsed)}</span>
