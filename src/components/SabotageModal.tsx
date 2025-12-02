@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Skull } from 'lucide-react';
+import { useStudy } from '../context/StudyContext';
 
 interface SabotageModalProps {
   onClose: () => void;
@@ -8,8 +9,15 @@ interface SabotageModalProps {
 }
 
 export const SabotageModal: React.FC<SabotageModalProps> = ({ onClose, dailyGoalHours }) => {
+  const { setIsSwipeEnabled } = useStudy();
   const [sabotageHours, setSabotageHours] = useState(1);
   const [recoveryDays, setRecoveryDays] = useState(30);
+
+  // Disable swipe when modal is open
+  useEffect(() => {
+    setIsSwipeEnabled(false);
+    return () => setIsSwipeEnabled(true);
+  }, [setIsSwipeEnabled]);
 
   // Calculate impact
   // Impact (minutes per day) = (Sabotage Hours * 60) / Recovery Days
@@ -81,20 +89,18 @@ export const SabotageModal: React.FC<SabotageModalProps> = ({ onClose, dailyGoal
                 <label className="block text-slate-400 text-sm font-medium mb-4">
                   何日で取り戻しますか？
                 </label>
-                <div className="flex gap-2 justify-center">
-                  {[7, 14, 30].map(days => (
-                    <button
-                      key={days}
-                      onClick={() => setRecoveryDays(days)}
-                      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                        recoveryDays === days
-                          ? 'bg-red-600 text-white shadow-lg shadow-red-900/50'
-                          : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                      }`}
-                    >
-                      {days}日後
-                    </button>
-                  ))}
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min="1"
+                    max="100"
+                    value={recoveryDays}
+                    onChange={(e) => setRecoveryDays(parseInt(e.target.value))}
+                    className="w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-red-600"
+                  />
+                  <span className="text-3xl font-bold text-white tabular-nums w-20 text-right">
+                    {recoveryDays}<span className="text-sm text-slate-500 ml-1">日</span>
+                  </span>
                 </div>
               </div>
 
