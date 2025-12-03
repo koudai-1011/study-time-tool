@@ -1,15 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import { differenceInCalendarDays, parseISO, startOfDay, differenceInSeconds, endOfDay } from 'date-fns';
 import { useAuth } from './AuthContext';
-import type { Category, StudyLog, Settings, ReviewItem } from '../types';
+import type { Category, StudyLog, Settings, ReviewItem, ReviewSuggestion } from '../types';
 import { useStudyData } from '../hooks/useStudyData';
 
-export type { Category, StudyLog, Settings, ReviewItem };
+export type { Category, StudyLog, Settings, ReviewItem, ReviewSuggestion };
 
 interface StudyContextType {
   settings: Settings;
   logs: StudyLog[];
   reviewItems: ReviewItem[];
+  suggestions: ReviewSuggestion[];
   updateSettings: (newSettings: Settings) => void;
   addLog: (duration: number, categoryId: number, endDate?: string) => void;
   updateLog: (logId: string, updates: Partial<StudyLog>) => void;
@@ -18,6 +19,8 @@ interface StudyContextType {
   updateReviewItem: (id: string, updates: Partial<ReviewItem>) => void;
   deleteReviewItem: (id: string) => void;
   completeReview: (id: string, reviewIndex: number) => void;
+  addSuggestion: (content: string, categoryId: number) => void;
+  deleteSuggestion: (id: string) => void;
   totalStudiedHours: number;
   remainingHours: number;
   daysRemaining: number;
@@ -42,11 +45,20 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const saved = localStorage.getItem('review-items');
     return saved ? JSON.parse(saved) : [];
   });
+  const [suggestions, setSuggestions] = useState<ReviewSuggestion[]>(() => {
+    const saved = localStorage.getItem('review-suggestions');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   // 復習アイテムをlocalStorageに保存
   useEffect(() => {
     localStorage.setItem('review-items', JSON.stringify(reviewItems));
   }, [reviewItems]);
+
+  // サジェストをlocalStorageに保存
+  useEffect(() => {
+    localStorage.setItem('review-suggestions', JSON.stringify(suggestions));
+  }, [suggestions]);
 
   // 復習アイテムの追加
   const addReviewItem = useCallback((content: string, categoryId: number, baseDate?: string) => {
@@ -81,6 +93,21 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       }
       return item;
     }));
+  }, []);
+
+  // サジェスト追加
+  const addSuggestion = useCallback((content: string, categoryId: number) => {
+    const newSuggestion: ReviewSuggestion = {
+      id: crypto.randomUUID(),
+      content,
+      categoryId,
+    };
+    setSuggestions(prev => [...prev, newSuggestion]);
+  }, []);
+
+  // サジェスト削除
+  const deleteSuggestion = useCallback((id: string) => {
+    setSuggestions(prev => prev.filter(s => s.id !== id));
   }, []);
 
   // Dynamic update interval based on time remaining
@@ -232,6 +259,7 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       settings,
       logs,
       reviewItems,
+      suggestions,
       updateSettings,
       addLog,
       updateLog,
@@ -240,6 +268,8 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       updateReviewItem,
       deleteReviewItem,
       completeReview,
+      addSuggestion,
+      deleteSuggestion,
       totalStudiedHours,
       remainingHours,
       daysRemaining,

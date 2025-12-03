@@ -30,6 +30,7 @@ const WIDGET_LABELS: Record<DashboardWidgetType, string> = {
   total_study: '総学習時間',
   remaining_time: '残り時間',
   category_chart: '学習時間の内訳（円グラフ）',
+  today_review: '今日の復習',
 };
 
 interface SortableItemProps {
@@ -93,18 +94,21 @@ const SortableItem: React.FC<SortableItemProps> = ({ widget, onToggle }) => {
 
 export const DashboardSettings: React.FC = () => {
   const { settings, updateSettings } = useStudy();
-  const layout = settings.dashboardLayout || {
-    widgets: [
-      { id: 'start_timer', visible: true, order: 0 },
-      { id: 'pomodoro_timer', visible: true, order: 1 },
-      { id: 'progress', visible: true, order: 2 },
-      { id: 'daily_goal', visible: true, order: 3 },
-      { id: 'today_study', visible: true, order: 4 },
-      { id: 'total_study', visible: true, order: 5 },
-      { id: 'remaining_time', visible: true, order: 6 },
-      { id: 'category_chart', visible: true, order: 7 },
-    ]
-  };
+  const reviewEnabled = settings.reviewSettings?.enabled || false;
+  
+  const defaultWidgets: DashboardWidget[] = [
+    { id: 'start_timer', visible: true, order: 0 },
+    { id: 'pomodoro_timer', visible: true, order: 1 },
+    { id: 'progress', visible: true, order: 2 },
+    { id: 'daily_goal', visible: true, order: 3 },
+    { id: 'today_study', visible: true, order: 4 },
+    { id: 'total_study', visible: true, order: 5 },
+    { id: 'remaining_time', visible: true, order: 6 },
+    { id: 'category_chart', visible: true, order: 7 },
+    ...(reviewEnabled ? [{ id: 'today_review' as const, visible: true, order: 8 }] : []),
+  ];
+
+  const layout = settings.dashboardLayout || { widgets: defaultWidgets };
 
   const sensors = useSensors(
     useSensor(PointerSensor),

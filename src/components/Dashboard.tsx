@@ -8,6 +8,7 @@ import type { DashboardWidget } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { StatCard } from './StatCard';
 import { CategoryChart } from './CategoryChart';
+import { TodayReviewWidget } from './TodayReviewWidget';
 
 import { SabotageModal } from './SabotageModal';
 import { ProgressDetailModal } from './ProgressDetailModal';
@@ -50,6 +51,7 @@ export const Dashboard: React.FC = () => {
   const realtimeDailyGoal = hoursUntilEnd > 0 ? (remainingHoursToStudy / hoursUntilEnd) * 24 : 0;
 
   // Default widgets definition
+  const reviewEnabled = settings.reviewSettings?.enabled || false;
   const defaultWidgets: DashboardWidget[] = [
     { id: 'start_timer', visible: true, order: 0 },
     { id: 'pomodoro_timer', visible: true, order: 1 },
@@ -59,6 +61,7 @@ export const Dashboard: React.FC = () => {
     { id: 'total_study', visible: true, order: 5 },
     { id: 'remaining_time', visible: true, order: 6 },
     { id: 'category_chart', visible: true, order: 7 },
+    ...(reviewEnabled ? [{ id: 'today_review' as const, visible: true, order: 8 }] : []),
   ];
 
   // Merge saved layout with default widgets to ensure new widgets appear
@@ -217,6 +220,13 @@ export const Dashboard: React.FC = () => {
                 return (
                   <div key="category_chart" className="col-span-1 md:col-span-2 lg:col-span-2">
                     <CategoryChart />
+                  </div>
+                );
+
+              case 'today_review':
+                return (
+                  <div key="today_review" className="col-span-1 md:col-span-2 lg:col-span-2">
+                    <TodayReviewWidget />
                   </div>
                 );
 

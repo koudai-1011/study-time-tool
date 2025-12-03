@@ -41,7 +41,7 @@ export interface Settings {
   enableSwipeNavigation?: boolean; // スワイプでのタブ遷移
 }
 
-export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';
+export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart' | 'today_review';
 
 export interface DashboardWidget {
   id: DashboardWidgetType;
@@ -68,3 +68,8 @@ export interface ReviewSettings {
   notificationEnabled: boolean; // 復習通知の有効/無効
 }
 
+export interface ReviewSuggestion {
+  id: string;
+  content: string;
+  categoryId: number;
+}

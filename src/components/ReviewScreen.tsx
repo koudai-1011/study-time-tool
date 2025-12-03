@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, CheckCircle, Trash2, Calendar as CalendarIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, CheckCircle, Trash2, Calendar as CalendarIcon, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { getTodayReviews, formatDateYMD, calculateReviewDates, DEFAULT_REVIEW_INTERVALS } from '../utils/reviewSchedule';
 import { ReviewCalendar } from './ReviewCalendar';
+import { ReviewSuggestionModal } from './ReviewSuggestionModal';
 
 export const ReviewScreen: React.FC = () => {
-  const { reviewItems, addReviewItem, deleteReviewItem, completeReview, settings } = useStudy();
+  const { reviewItems, addReviewItem, deleteReviewItem, completeReview, settings, suggestions } = useStudy();
   const [newContent, setNewContent] = useState('');
   const [newCategoryId, setNewCategoryId] = useState(settings.categories[0]?.id || 0);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
+  
+  // アコーディオンの状態管理（カテゴリIDをキーにして開閉状態を保持）
+  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set(settings.categories.map(c => c.id)));
 
   const intervals = settings.reviewSettings?.intervals || DEFAULT_REVIEW_INTERVALS;
   const todayReviews = getTodayReviews(reviewItems, intervals);
@@ -21,7 +26,32 @@ export const ReviewScreen: React.FC = () => {
     }
   };
 
+  const handleSuggestionClick = (content: string, categoryId: number) => {
+    setNewContent(content);
+    setNewCategoryId(categoryId);
+  };
+
+  const toggleCategory = (categoryId: number) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(categoryId)) {
+      newExpanded.delete(categoryId);
+    } else {
+      newExpanded.add(categoryId);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
   const labels = ['1日目', '3日目', '7日目', '14日目', '30日目', '60日目'];
+  const selectedCategory = settings.categories.find(c => c.id === newCategoryId);
+
+  // カテゴリごとにアイテムをグループ化
+  const groupedItems = settings.categories.reduce((acc, category) => {
+    const items = reviewItems.filter(item => item.categoryId === category.id);
+    if (items.length > 0) {
+      acc[category.id] = items;
+    }
+    return acc;
+  }, {} as Record<number, typeof reviewItems>);
 
   return (
     <div className="space-y-8">
@@ -52,14 +82,24 @@ export const ReviewScreen: React.FC = () => {
 
       {/* 入力欄 */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">新しい学習項目を追加</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">新しい学習項目を追加</h3>
+          <button
+            onClick={() => setIsSuggestionModalOpen(true)}
+            className="text-sm text-primary-600 dark:text-primary-400 hover:underline flex items-center gap-1"
+          >
+            <Settings size={16} />
+            サジェスト設定
+          </button>
+        </div>
+
         <div className="space-y-4">
           {/* カテゴリ選択 */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               カテゴリ
             </label>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-2 mb-2">
               {settings.categories.map(category => (
                 <motion.button
                   key={category.id}
@@ -77,6 +117,10 @@ export const ReviewScreen: React.FC = () => {
                 />
               ))}
             </div>
+            {/* 選択中のカテゴリ名表示 */}
+            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 text-right h-5">
+              {selectedCategory?.name || 'カテゴリを選択'}
+            </p>
           </div>
 
           {/* 内容入力 */}
@@ -92,6 +136,28 @@ export const ReviewScreen: React.FC = () => {
               placeholder="例：英単語100個、微分積分の公式"
               className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-800 dark:text-slate-100"
             />
+            
+            {/* サジェストチップ */}
+            {suggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {suggestions.map(suggestion => {
+                  const category = settings.categories.find(c => c.id === suggestion.categoryId);
+                  return (
+                    <button
+                      key={suggestion.id}
+                      onClick={() => handleSuggestionClick(suggestion.content, suggestion.categoryId)}
+                      className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full text-xs text-slate-700 dark:text-slate-300 transition-colors"
+                    >
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: category?.color }}
+                      />
+                      {suggestion.content}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <motion.button
@@ -154,7 +220,7 @@ export const ReviewScreen: React.FC = () => {
         )}
       </div>
 
-      {/* 全項目リスト */}
+      {/* 全項目リスト（アコーディオン） */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
           全項目 ({reviewItems.length}件)
@@ -163,42 +229,78 @@ export const ReviewScreen: React.FC = () => {
         {reviewItems.length === 0 ? (
           <p className="text-center py-8 text-slate-400">項目がありません</p>
         ) : (
-          <div className="space-y-3">
-            {reviewItems.map(item => {
-              const category = settings.categories.find(c => c.id === item.categoryId);
-              const progress = `${item.completedReviews.length}/${intervals.length}`;
-              
+          <div className="space-y-4">
+            {settings.categories.map(category => {
+              const items = groupedItems[category.id];
+              if (!items) return null;
+
+              const isExpanded = expandedCategories.has(category.id);
+
               return (
-                <motion.div
-                  key={item.id}
-                  className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div
-                    className="w-12 h-12 rounded-lg flex-shrink-0"
-                    style={{ backgroundColor: category?.color }}
-                  />
-                  <div className="flex-1">
-                    <p className="font-semibold text-slate-800 dark:text-slate-100">{item.content}</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      進捗: {progress} | 基準日: {item.baseDate}
-                    </p>
-                  </div>
-                  <motion.button
-                    onClick={() => deleteReviewItem(item.id)}
-                    className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 transition-colors"
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+                <div key={category.id} className="border border-slate-100 dark:border-slate-700 rounded-xl overflow-hidden">
+                  <button
+                    onClick={() => toggleCategory(category.id)}
+                    className="w-full flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-700/30 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
                   >
-                    <Trash2 size={20} />
-                  </motion.button>
-                </motion.div>
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-4 h-4 rounded-full" 
+                        style={{ backgroundColor: category.color }}
+                      />
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{category.name}</span>
+                      <span className="text-xs px-2 py-0.5 bg-slate-200 dark:bg-slate-600 rounded-full text-slate-600 dark:text-slate-300">
+                        {items.length}
+                      </span>
+                    </div>
+                    {isExpanded ? <ChevronDown size={20} className="text-slate-400" /> : <ChevronRight size={20} className="text-slate-400" />}
+                  </button>
+                  
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="p-2 space-y-2">
+                          {items.map(item => {
+                            const progress = `${item.completedReviews.length}/${intervals.length}`;
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 rounded-lg transition-colors"
+                              >
+                                <div className="flex-1">
+                                  <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">{item.content}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    進捗: {progress} | 基準日: {item.baseDate}
+                                  </p>
+                                </div>
+                                <button
+                                  onClick={() => deleteReviewItem(item.id)}
+                                  className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-400 hover:text-red-600 transition-colors"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               );
             })}
           </div>
         )}
       </div>
+
+      <ReviewSuggestionModal 
+        isOpen={isSuggestionModalOpen} 
+        onClose={() => setIsSuggestionModalOpen(false)} 
+      />
     </div>
   );
 };

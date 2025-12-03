@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { formatDateYMD, getMonthlyReviewCounts } from '../utils/reviewSchedule';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight, X, CheckCircle } from 'lucide-react';
+import { formatDateYMD, getReviewsForDate } from '../utils/reviewSchedule';
+import { useStudy } from '../context/StudyContext';
 import type { ReviewItem } from '../types';
 
 interface ReviewCalendarProps {
@@ -10,7 +11,9 @@ interface ReviewCalendarProps {
 }
 
 export const ReviewCalendar: React.FC<ReviewCalendarProps> = ({ items, intervals }) => {
+  const { settings, completeReview } = useStudy();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -20,14 +23,18 @@ export const ReviewCalendar: React.FC<ReviewCalendarProps> = ({ items, intervals
   const daysInMonth = lastDay.getDate();
   const startDayOfWeek = firstDay.getDay();
 
-  const monthlyCount = getMonthlyReviewCounts(items, year, month + 1, intervals);
-
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
   };
 
   const handleNextMonth = () => {
     setCurrentDate(new Date(year, month + 1, 1));
+  };
+
+  const handleDateClick = (dateKey: string, count: number) => {
+    if (count > 0) {
+      setSelectedDate(dateKey);
+    }
   };
 
   // カレンダーのグリッド（前月の末尾の日も含む）
@@ -57,6 +64,9 @@ export const ReviewCalendar: React.FC<ReviewCalendarProps> = ({ items, intervals
   }
 
   const today = formatDateYMD(new Date());
+  const selectedReviews = selectedDate ? getReviewsForDate(items, selectedDate, intervals) : [];
+
+  const labels = ['1日目', '3日目', '7日目', '14日目', '30日目', '60日目'];
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
@@ -102,21 +112,30 @@ export const ReviewCalendar: React.FC<ReviewCalendarProps> = ({ items, intervals
       {/* カレンダーグリッド */}
       <div className="grid grid-cols-7 gap-2">
         {calendarDays.map(({ date, isCurrentMonth, dateKey }, index) => {
-          const count = monthlyCount.get(dateKey) || 0;
+          const reviewsForDate = getReviewsForDate(items, dateKey, intervals);
+          const count = reviewsForDate.length;
           const isToday = dateKey === today;
           const dayOfWeek = index % 7;
           
+          // その日の復習に含まれるカテゴリの色を取得（最大4つ）
+          const categoryColors = reviewsForDate
+            .map(item => settings.categories.find(c => c.id === item.categoryId)?.color)
+            .filter((color, index, self) => color && self.indexOf(color) === index) // 重複削除
+            .slice(0, 4);
+          
           return (
-            <motion.div
+            <motion.button
               key={index}
+              onClick={() => handleDateClick(dateKey, count)}
+              disabled={count === 0}
               className={`aspect-square rounded-xl flex flex-col items-center justify-center relative border transition-all ${
                 isCurrentMonth
                   ? count > 0
-                    ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800'
+                    ? 'bg-slate-50 dark:bg-slate-700/50 border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer'
                     : 'bg-slate-50 dark:bg-slate-700/50 border-slate-100 dark:border-slate-700'
                   : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 opacity-30'
               } ${isToday ? 'ring-2 ring-primary-500' : ''}`}
-              whileHover={isCurrentMonth ? { scale: 1.05 } : {}}
+              whileHover={isCurrentMonth && count > 0 ? { scale: 1.05 } : {}}
             >
               <span
                 className={`text-sm font-medium ${
@@ -136,30 +155,85 @@ export const ReviewCalendar: React.FC<ReviewCalendarProps> = ({ items, intervals
               
               {count > 0 && (
                 <div className="absolute bottom-1 flex gap-0.5">
-                  {Array.from({ length: Math.min(count, 3) }).map((_, i) => (
+                  {categoryColors.map((color, i) => (
                     <div 
                       key={i}
-                      className="w-1 h-1 rounded-full bg-primary-600 dark:bg-primary-400"
+                      className="w-1.5 h-1.5 rounded-full"
+                      style={{ backgroundColor: color }}
                     />
                   ))}
-                  {count > 3 && (
-                    <span className="text-[8px] text-primary-600 dark:text-primary-400 font-bold">
-                      +{count - 3}
+                  {count > 4 && (
+                    <span className="text-[8px] text-slate-600 dark:text-slate-400 font-bold ml-0.5">
+                      +{count - 4}
                     </span>
                   )}
                 </div>
               )}
-            </motion.div>
+            </motion.button>
           );
         })}
       </div>
-      
-      <div className="mt-4 flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-primary-600 dark:bg-primary-400" />
-          <span>復習予定あり</span>
-        </div>
-      </div>
+
+      {/* 詳細モーダル */}
+      <AnimatePresence>
+        {selectedDate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-md overflow-hidden max-h-[80vh] flex flex-col"
+            >
+              <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                  {selectedDate} の復習
+                </h3>
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-4 space-y-3 overflow-y-auto">
+                {selectedReviews.length === 0 ? (
+                  <p className="text-center text-slate-400 py-8">この日の復習はありません</p>
+                ) : (
+                  selectedReviews.map(item => {
+                    const category = settings.categories.find(c => c.id === item.categoryId);
+                    const label = item.reviewIndex < labels.length ? labels[item.reviewIndex] : '復習';
+                    
+                    return (
+                      <div
+                        key={`${item.id}-${item.reviewIndex}`}
+                        className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-lg flex-shrink-0"
+                          style={{ backgroundColor: category?.color }}
+                        />
+                        <div className="flex-1">
+                          <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">{item.content}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            completeReview(item.id, item.reviewIndex);
+                          }}
+                          className="p-2 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 transition-colors"
+                        >
+                          <CheckCircle size={20} />
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
