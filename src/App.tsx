@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { HistoryScreen } from './components/HistoryScreen';
+import { ReviewScreen } from './components/ReviewScreen';
 import { Settings } from './components/Settings';
 import { DialogProvider } from './context/DialogContext';
 
@@ -23,7 +24,7 @@ const DarkModeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'review' | 'calendar' | 'settings'>('dashboard');
 
   // Global: disable copy across the app (allow paste)
   useEffect(() => {
@@ -49,6 +50,7 @@ function App() {
           <DialogProvider>
             <Layout activeTab={activeTab} onTabChange={setActiveTab}>
               {activeTab === 'dashboard' && <Dashboard />}
+              {activeTab === 'review' && <ReviewScreen />}
               {activeTab === 'calendar' && <HistoryScreen />}
               {activeTab === 'settings' && <Settings />}
             </Layout>

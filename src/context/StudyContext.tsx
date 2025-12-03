@@ -1,18 +1,23 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
 import { differenceInCalendarDays, parseISO, startOfDay, differenceInSeconds, endOfDay } from 'date-fns';
 import { useAuth } from './AuthContext';
-import type { Category, StudyLog, Settings } from '../types';
+import type { Category, StudyLog, Settings, ReviewItem } from '../types';
 import { useStudyData } from '../hooks/useStudyData';
 
-export type { Category, StudyLog, Settings };
+export type { Category, StudyLog, Settings, ReviewItem };
 
 interface StudyContextType {
   settings: Settings;
   logs: StudyLog[];
+  reviewItems: ReviewItem[];
   updateSettings: (newSettings: Settings) => void;
   addLog: (duration: number, categoryId: number, endDate?: string) => void;
   updateLog: (logId: string, updates: Partial<StudyLog>) => void;
   deleteLog: (logId: string) => void;
+  addReviewItem: (content: string, categoryId: number, baseDate?: string) => void;
+  updateReviewItem: (id: string, updates: Partial<ReviewItem>) => void;
+  deleteReviewItem: (id: string) => void;
+  completeReview: (id: string, reviewIndex: number) => void;
   totalStudiedHours: number;
   remainingHours: number;
   daysRemaining: number;
@@ -33,6 +38,50 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const { settings, logs, setSettings, setLogs, DEFAULT_CATEGORIES } = useStudyData(user);
   const [isSwipeEnabled, setIsSwipeEnabled] = useState(true);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [reviewItems, setReviewItems] = useState<ReviewItem[]>(() => {
+    const saved = localStorage.getItem('review-items');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  // 復習アイテムをlocalStorageに保存
+  useEffect(() => {
+    localStorage.setItem('review-items', JSON.stringify(reviewItems));
+  }, [reviewItems]);
+
+  // 復習アイテムの追加
+  const addReviewItem = useCallback((content: string, categoryId: number, baseDate?: string) => {
+    const newItem: ReviewItem = {
+      id: crypto.randomUUID(),
+      content,
+      categoryId,
+      baseDate: baseDate || new Date().toISOString().split('T')[0],
+      completedReviews: [],
+      created: new Date().toISOString(),
+    };
+    setReviewItems(prev => [...prev, newItem]);
+  }, []);
+
+  // 復習アイテムの更新
+  const updateReviewItem = useCallback((id: string, updates: Partial<ReviewItem>) => {
+    setReviewItems(prev => prev.map(item => 
+      item.id === id ? { ...item, ...updates } : item
+    ));
+  }, []);
+
+  // 復習アイテムの削除
+  const deleteReviewItem = useCallback((id: string) => {
+    setReviewItems(prev => prev.filter(item => item.id !== id));
+  }, []);
+
+  // 復習完了
+  const completeReview = useCallback((id: string, reviewIndex: number) => {
+    setReviewItems(prev => prev.map(item => {
+      if (item.id === id && !item.completedReviews.includes(reviewIndex)) {
+        return { ...item, completedReviews: [...item.completedReviews, reviewIndex] };
+      }
+      return item;
+    }));
+  }, []);
 
   // Dynamic update interval based on time remaining
   // - When time is low (< 1 hour): update every 1 second
@@ -182,10 +231,15 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     <StudyContext.Provider value={{
       settings,
       logs,
+      reviewItems,
       updateSettings,
       addLog,
       updateLog,
       deleteLog,
+      addReviewItem,
+      updateReviewItem,
+      deleteReviewItem,
+      completeReview,
       totalStudiedHours,
       remainingHours,
       daysRemaining,

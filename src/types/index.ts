@@ -37,6 +37,7 @@ export interface Settings {
   isDarkMode?: boolean;
   showDailyGoalLine?: boolean;
   notificationSettings?: NotificationSettings;
+  reviewSettings?: ReviewSettings;
 }
 
 export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';
@@ -50,3 +51,19 @@ export interface DashboardWidget {
 export interface DashboardLayout {
   widgets: DashboardWidget[];
 }
+
+export interface ReviewItem {
+  id: string;
+  content: string;           // 学習内容
+  categoryId: number;        // カテゴリ
+  baseDate: string;          // 基準日（ISO形式 YYYY-MM-DD）
+  completedReviews: number[]; // 完了済み復習インデックス [0,1,2...]
+  created: string;           // 作成日時（ISO形式）
+}
+
+export interface ReviewSettings {
+  enabled: boolean;          // 機能の有効/無効
+  intervals: number[];       // 復習間隔（日数） [1,3,7,14,30,60]
+  notificationEnabled: boolean; // 復習通知の有効/無効
+}
+

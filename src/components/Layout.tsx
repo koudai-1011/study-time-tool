@@ -1,18 +1,21 @@
 import React, { useRef, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutDashboard, History, Settings as SettingsIcon, Clock } from 'lucide-react';
+import { LayoutDashboard, History, Settings as SettingsIcon, Clock, BookOpen } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 
 interface LayoutProps {
   children: React.ReactNode;
-  activeTab: 'dashboard' | 'calendar' | 'settings';
-  onTabChange: (tab: 'dashboard' | 'calendar' | 'settings') => void;
+  activeTab: 'dashboard' | 'review' | 'calendar' | 'settings';
+  onTabChange: (tab: 'dashboard' | 'review' | 'calendar' | 'settings') => void;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
-  const { isSwipeEnabled } = useStudy();
-  const tabs: Array<'dashboard' | 'calendar' | 'settings'> = ['dashboard', 'calendar', 'settings'];
+  const { isSwipeEnabled, settings } = useStudy();
+  const reviewEnabled = settings.reviewSettings?.enabled || false;
+  const tabs: Array<'dashboard' | 'review' | 'calendar' | 'settings'> = reviewEnabled 
+    ? ['dashboard', 'review', 'calendar', 'settings']
+    : ['dashboard', 'calendar', 'settings'];
   const currentIndex = tabs.indexOf(activeTab);
   const prevIndexRef = useRef<number>(currentIndex);
   // direction: positive means moving to higher index (to the right)
@@ -86,6 +89,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             isActive={activeTab === 'dashboard'}
             onClick={() => onTabChange('dashboard')}
           />
+          {reviewEnabled && (
+            <NavItem
+              icon={<BookOpen size={20} />}
+              label="復習"
+              isActive={activeTab === 'review'}
+              onClick={() => onTabChange('review')}
+            />
+          )}
           <NavItem
             icon={<History size={20} />}
             label="学習履歴"
@@ -145,6 +156,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
           isActive={activeTab === 'dashboard'}
           onClick={() => onTabChange('dashboard')}
         />
+        {reviewEnabled && (
+          <MobileNavItem
+            icon={<BookOpen size={24} />}
+            label="復習"
+            isActive={activeTab === 'review'}
+            onClick={() => onTabChange('review')}
+          />
+        )}
         <MobileNavItem
           icon={<History size={24} />}
           label="学習履歴"
