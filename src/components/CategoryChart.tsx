@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Sector } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Sector } from 'recharts';
 import { useStudy } from '../context/StudyContext';
 
 export const CategoryChart: React.FC = () => {
@@ -86,57 +86,76 @@ export const CategoryChart: React.FC = () => {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-700 shadow-sm">
+    <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 md:p-8 border border-slate-100 dark:border-slate-700 shadow-sm h-full flex flex-col">
       <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">学習時間の内訳</h3>
-      <div className="h-[300px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
-            <Pie
-              // @ts-ignore
-              activeIndex={activeIndex}
-              activeShape={renderActiveShape}
-              data={data}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={100}
-              paddingAngle={2}
-              dataKey="value"
-              stroke="none"
-              onMouseEnter={onPieEnter}
-              onClick={onPieEnter}
-            >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Legend 
-              verticalAlign="bottom" 
-              height={36} 
-              iconType="circle"
-              onClick={(props) => {
-                const index = data.findIndex(item => item.name === props.value);
-                setActiveIndex(index);
-              }}
-              formatter={(value, _entry: any) => {
-                const item = data.find(d => d.name === value);
-                const total = data.reduce((sum, d) => sum + d.value, 0);
-                const percent = item ? (item.value / total * 100).toFixed(1) : 0;
-                const isActive = data[activeIndex]?.name === value;
-                
-                return (
-                  <span className={`text-sm ml-1 cursor-pointer transition-colors ${
+      <div className="flex-1 flex flex-col md:flex-row gap-6 items-center">
+        {/* Chart Area */}
+        <div className="w-full md:w-1/2 h-[250px] relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                // @ts-ignore
+                activeIndex={activeIndex}
+                activeShape={renderActiveShape}
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={80}
+                paddingAngle={2}
+                dataKey="value"
+                stroke="none"
+                onMouseEnter={onPieEnter}
+                onClick={onPieEnter}
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Custom Legend Area */}
+        <div className="w-full md:w-1/2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-2">
+            {data.map((entry, index) => {
+              const total = data.reduce((sum, d) => sum + d.value, 0);
+              const percent = (entry.value / total * 100).toFixed(1);
+              const isActive = index === activeIndex;
+
+              return (
+                <div 
+                  key={entry.name}
+                  className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition-colors ${
                     isActive 
-                      ? 'text-slate-900 dark:text-slate-100 font-bold' 
-                      : 'text-slate-600 dark:text-slate-400'
-                  }`}>
-                    {value} ({percent}%)
+                      ? 'bg-slate-100 dark:bg-slate-700' 
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
+                  onClick={() => setActiveIndex(index)}
+                  onMouseEnter={() => setActiveIndex(index)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: entry.color }}
+                    />
+                    <span className={`text-sm ${
+                      isActive 
+                        ? 'font-bold text-slate-900 dark:text-slate-100' 
+                        : 'text-slate-600 dark:text-slate-400'
+                    }`}>
+                      {entry.name}
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                    {percent}%
                   </span>
-                );
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
