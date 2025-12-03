@@ -27,12 +27,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {
-      if (isSwipeEnabled && currentIndex < tabs.length - 1) {
+      const swipeEnabled = settings.enableSwipeNavigation !== false; // デフォルトtrue
+      if (isSwipeEnabled && swipeEnabled && currentIndex < tabs.length - 1) {
         onTabChange(tabs[currentIndex + 1]);
       }
     },
     onSwipedRight: () => {
-      if (isSwipeEnabled && currentIndex > 0) {
+      const swipeEnabled = settings.enableSwipeNavigation !== false; // デフォルトtrue
+      if (isSwipeEnabled && swipeEnabled && currentIndex > 0) {
         onTabChange(tabs[currentIndex - 1]);
       }
     },

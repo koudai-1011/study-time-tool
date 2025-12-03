@@ -38,6 +38,7 @@ export interface Settings {
   showDailyGoalLine?: boolean;
   notificationSettings?: NotificationSettings;
   reviewSettings?: ReviewSettings;
+  enableSwipeNavigation?: boolean; // スワイプでのタブ遷移
 }
 
 export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart';
