@@ -26,6 +26,7 @@ export const Dashboard: React.FC = () => {
     : 0;
 
   const [fullscreenTimer, setFullscreenTimer] = useState(false);
+  const [showPomodoroTimer, setShowPomodoroTimer] = useState(false);
   const [showSabotageModal, setShowSabotageModal] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showStudyTimeModal, setShowStudyTimeModal] = useState(false);
@@ -69,13 +70,17 @@ export const Dashboard: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <header className="col-span-1 md:col-span-2 lg:col-span-4 mb-4">
+    <div className="space-y-6 pb-24 md:pb-6">
+      <header className="flex justify-between items-center mb-6">
+        <div>
           <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">ダッシュボード</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">進捗を確認して、集中力を維持しましょう。</p>
-        </header>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            {now.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })}
+          </p>
+        </div>
+      </header>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {/* Dynamic Widgets */}
         {layout.widgets
           .filter(w => w.visible)
@@ -100,9 +105,19 @@ export const Dashboard: React.FC = () => {
 
               case 'pomodoro_timer':
                 return (
-                  <div key="pomodoro_timer" className="col-span-1 md:col-span-2 lg:col-span-4">
-                    <PomodoroTimer />
-                  </div>
+                  <motion.button
+                    key="pomodoro_timer"
+                    onClick={() => setShowPomodoroTimer(true)}
+                    className="col-span-1 md:col-span-2 lg:col-span-4 w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 dark:from-orange-600 dark:to-orange-700 text-white font-bold py-6 rounded-2xl shadow-xl shadow-orange-500/30 dark:shadow-orange-600/20 transition-all flex items-center justify-center gap-3 text-lg"
+                    whileHover={{ scale: 1.02, boxShadow: '0 25px 50px -12px rgba(249, 115, 22, 0.5)' }}
+                    whileTap={{ scale: 0.98 }}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 25, delay: 0.05 }}
+                  >
+                    <Clock size={24} />
+                    ポモドーロタイマー開始
+                  </motion.button>
                 );
 
               case 'progress':
@@ -115,100 +130,96 @@ export const Dashboard: React.FC = () => {
                     transition={{ delay: 0.1 }}
                     onClick={() => setShowProgressModal(true)}
                   >
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-6">全体の進捗</h3>
-
-                    <div className="relative pt-4">
-                      <div className="flex mb-2 items-center justify-between">
-                        <div>
-                          <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-primary-600 bg-primary-200">
-                            進捗率
-                          </span>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-xs font-semibold inline-block text-primary-600">
-                            {progress.toFixed(1)}%
-                          </span>
+                    <div className="flex justify-between items-end mb-4">
+                      <div>
+                        <h3 className="text-slate-500 dark:text-slate-400 font-medium mb-1 flex items-center gap-2">
+                          <Target size={18} />
+                          全体の進捗
+                        </h3>
+                        <div className="text-4xl font-bold text-slate-800 dark:text-slate-100">
+                          {progress.toFixed(1)}%
                         </div>
                       </div>
-                      <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-primary-100">
-                        <div
-                          style={{ width: `${progress}%` }}
-                          className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-primary-500 transition-all duration-1000 ease-out"
-                        ></div>
+                      <div className="text-right">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">目標まで</div>
+                        <div className="text-xl font-bold text-primary-600 dark:text-primary-400">
+                          {Math.max(0, settings.targetHours - totalStudiedHours).toFixed(1)}時間
+                        </div>
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
-                        順調です！目標の{settings.targetHours}時間達成に向けて頑張りましょう。
-                      </p>
                     </div>
-                  </motion.div>
-                );
-
-              case 'category_chart':
-                return (
-                  <motion.div
-                    key="category_chart"
-                    className="col-span-1 md:col-span-2 lg:col-span-4"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <CategoryChart />
+                    
+                    <div className="relative h-4 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <motion.div 
+                        className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary-500 to-primary-400 rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${progress}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-3 text-center">
+                      目標: {settings.targetHours}時間 / 現在: {totalStudiedHours.toFixed(1)}時間
+                    </p>
                   </motion.div>
                 );
 
               case 'daily_goal':
                 return (
-                  <div 
-                    key="daily_goal" 
-                    className="col-span-1 md:col-span-2 lg:col-span-1"
-                  >
-                    <StatCard
-                      icon={<Target className="text-blue-500" />}
-                      label="1日の目標"
-                      value={formatTimeJapanese(realtimeDailyGoal)}
-                      subtext="期限まで（タップでサボり計算）"
-                      color="bg-blue-50"
-                      onClick={() => setShowSabotageModal(true)}
-                    />
-                  </div>
+                  <StatCard
+                    key="daily_goal"
+                    icon={<Calendar className="text-blue-500" size={24} />}
+                    label="1日の目標"
+                    value={formatTimeJapanese(realtimeDailyGoal)}
+                    subtext="目標期限から算出"
+                    color="bg-blue-50 dark:bg-blue-900/20"
+                    onClick={() => setShowStudyTimeModal(true)}
+                  />
                 );
+
               case 'today_study':
                 return (
-                  <div key="today_study" className="col-span-1 md:col-span-2 lg:col-span-1">
-                    <StatCard
-                      icon={<Clock className="text-emerald-500" />}
-                      label="今日の学習"
-                      value={formatTimeJapanese(todayStudiedHours)}
-                      subtext="今日の合計"
-                      color="bg-emerald-50"
-                    />
-                  </div>
+                  <StatCard
+                    key="today_study"
+                    icon={<Clock className="text-green-500" size={24} />}
+                    label="今日の学習"
+                    value={formatTimeJapanese(todayStudiedHours)}
+                    subtext={todayStudiedHours >= realtimeDailyGoal ? "目標達成！" : `あと${Math.max(0, realtimeDailyGoal - todayStudiedHours).toFixed(1)}時間`}
+                    color="bg-green-50 dark:bg-green-900/20"
+                    onClick={() => setShowStudyTimeModal(true)}
+                  />
                 );
+
               case 'total_study':
                 return (
-                  <div key="total_study" className="col-span-1 md:col-span-2 lg:col-span-1">
-                    <StatCard
-                      icon={<TrendingUp className="text-violet-500" />}
-                      label="総学習時間"
-                      value={formatTimeJapanese(totalStudiedHours)}
-                      subtext={`目標 ${settings.targetHours}時間`}
-                      color="bg-violet-50"
-                      onClick={() => setShowStudyTimeModal(true)}
-                    />
-                  </div>
+                  <StatCard
+                    key="total_study"
+                    icon={<TrendingUp className="text-purple-500" size={24} />}
+                    label="総学習時間"
+                    value={formatTimeJapanese(totalStudiedHours)}
+                    subtext="積み上げ中"
+                    color="bg-purple-50 dark:bg-purple-900/20"
+                    onClick={() => setShowStudyTimeModal(true)}
+                  />
                 );
+
               case 'remaining_time':
                 return (
-                  <div key="remaining_time" className="col-span-1 md:col-span-2 lg:col-span-1">
-                    <StatCard
-                      icon={<Calendar className="text-amber-500" />}
-                      label="残り時間"
-                      value={formatCountdownJapanese(timeRemainingSeconds)}
-                      subtext=""
-                      color="bg-amber-50"
-                    />
+                  <StatCard
+                    key="remaining_time"
+                    icon={<Clock className="text-orange-500" size={24} />}
+                    label="残り時間"
+                    value={formatCountdownJapanese(timeRemainingSeconds)}
+                    subtext={settings.endDate ? `期限: ${settings.endDate}` : '期限なし'}
+                    color="bg-orange-50 dark:bg-orange-900/20"
+                  />
+                );
+
+              case 'category_chart':
+                return (
+                  <div key="category_chart" className="col-span-1 md:col-span-2 lg:col-span-2">
+                    <CategoryChart />
                   </div>
                 );
+
               default:
                 return null;
             }
@@ -216,28 +227,27 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Modals */}
-      {showSabotageModal && (
-        <SabotageModal 
-          dailyGoalHours={realtimeDailyGoal} 
-          onClose={() => setShowSabotageModal(false)} 
-        />
-      )}
-
-      {showProgressModal && (
-        <ProgressDetailModal onClose={() => setShowProgressModal(false)} />
-      )}
-
-      {showStudyTimeModal && (
-        <StudyTimeDetailModal onClose={() => setShowStudyTimeModal(false)} />
-      )}
-
-      {/* Fullscreen Timer */}
-      <AnimatePresence mode="wait">
+      <AnimatePresence>
         {fullscreenTimer && (
-          <Timer key="timer-overlay" fullscreen={true} onClose={() => setFullscreenTimer(false)} />
+          <Timer fullscreen onClose={() => setFullscreenTimer(false)} />
+        )}
+        {showPomodoroTimer && (
+          <PomodoroTimer onClose={() => setShowPomodoroTimer(false)} />
+        )}
+        {showSabotageModal && (
+          <SabotageModal 
+            dailyGoalHours={realtimeDailyGoal} 
+            onClose={() => setShowSabotageModal(false)} 
+          />
+        )}
+        {showProgressModal && (
+          <ProgressDetailModal onClose={() => setShowProgressModal(false)} />
+        )}
+        {showStudyTimeModal && (
+          <StudyTimeDetailModal onClose={() => setShowStudyTimeModal(false)} />
         )}
       </AnimatePresence>
-    </>
+    </div>
   );
 };
 
