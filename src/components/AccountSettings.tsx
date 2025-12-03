@@ -1,9 +1,19 @@
 import React from 'react';
 import { LogIn, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useDialog } from '../context/DialogContext';
 
 export const AccountSettings: React.FC = () => {
   const { user, signInWithGoogle, logout } = useAuth();
+  const dialog = useDialog();
+
+  const handleLogin = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      await dialog.alert('ログインに失敗しました。設定を確認してください。', { type: 'error' });
+    }
+  };
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 md:p-8 mb-6">
@@ -31,7 +41,7 @@ export const AccountSettings: React.FC = () => {
         <div>
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Googleアカウントでログインすると、データをクラウドに保存できます。</p>
           <button
-            onClick={signInWithGoogle}
+            onClick={handleLogin}
             className="flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-600 text-white hover:bg-primary-700 transition-colors font-medium"
           >
             <LogIn size={20} />

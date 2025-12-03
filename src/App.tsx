@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './components/Dashboard';
 import { HistoryScreen } from './components/HistoryScreen';
 import { Settings } from './components/Settings';
+import { DialogProvider } from './context/DialogContext';
 
 // Component to handle dark mode class
 const DarkModeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -45,11 +46,13 @@ function App() {
     <AuthProvider>
       <StudyProvider>
         <DarkModeWrapper>
-          <Layout activeTab={activeTab} onTabChange={setActiveTab}>
-            {activeTab === 'dashboard' && <Dashboard />}
-            {activeTab === 'calendar' && <HistoryScreen />}
-            {activeTab === 'settings' && <Settings />}
-          </Layout>
+          <DialogProvider>
+            <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+              {activeTab === 'dashboard' && <Dashboard />}
+              {activeTab === 'calendar' && <HistoryScreen />}
+              {activeTab === 'settings' && <Settings />}
+            </Layout>
+          </DialogProvider>
         </DarkModeWrapper>
       </StudyProvider>
     </AuthProvider>

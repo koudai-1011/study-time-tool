@@ -1,9 +1,11 @@
 import React from 'react';
 import { useStudy } from '../context/StudyContext';
+import { useDialog } from '../context/DialogContext';
 import { Download, Upload, Trash2 } from 'lucide-react';
 
 export const DataManagement: React.FC = () => {
   const { settings, logs, setSettings, setLogs } = useStudy();
+  const dialog = useDialog();
 
   const handleExport = () => {
     const data = { settings, logs };
@@ -21,23 +23,28 @@ export const DataManagement: React.FC = () => {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
         if (data.settings) setSettings(data.settings);
         if (data.logs) setLogs(data.logs);
-        alert('データをインポートしました');
+        await dialog.alert('データをインポートしました', { type: 'success' });
       } catch (error) {
-        alert('データの読み込みに失敗しました');
+        await dialog.alert('データの読み込みに失敗しました', { type: 'error' });
       }
     };
     reader.readAsText(file);
   };
 
-  const handleClearData = () => {
-    if (confirm('すべてのデータを削除しますか？この操作は取り消せません。')) {
+  const handleClearData = async () => {
+    if (await dialog.confirm('すべてのデータを削除しますか？', { 
+      message: 'この操作は取り消せません。本当に削除しますか？',
+      type: 'warning',
+      confirmText: '削除する',
+      confirmColor: 'danger'
+    })) {
       setLogs([]);
-      alert('学習記録を削除しました');
+      await dialog.alert('学習記録を削除しました', { type: 'success' });
     }
   };
 

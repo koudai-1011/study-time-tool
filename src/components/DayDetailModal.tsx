@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, Plus, ChevronDown } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
+import { useDialog } from '../context/DialogContext';
 import { formatTimeJapanese } from '../utils/timeFormat';
 import { format, parseISO } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -23,6 +24,7 @@ interface GroupedLog {
 
 export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose }) => {
   const { logs, settings, deleteLog, addLog, updateLog, setIsSwipeEnabled } = useStudy();
+  const dialog = useDialog();
   
   // Disable global swipe navigation when modal is open
   useEffect(() => {
@@ -85,8 +87,13 @@ export const DayDetailModal: React.FC<DayDetailModalProps> = ({ date, onClose })
     setExpandedCategories(newExpanded);
   };
 
-  const handleDelete = (logId: string) => {
-    if (confirm('このログを削除しますか？')) {
+  const handleDelete = async (logId: string) => {
+    if (await dialog.confirm('ログを削除', {
+      message: 'この学習記録を削除してもよろしいですか？',
+      type: 'warning',
+      confirmText: '削除',
+      confirmColor: 'danger'
+    })) {
       deleteLog(logId);
     }
   };
