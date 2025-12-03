@@ -125,8 +125,8 @@ export const NotificationSettings: React.FC = () => {
           
           <ToggleRow
             icon={<Clock className="text-blue-500" size={20} />}
-            label="タイマー完了通知"
-            description="設定した時間に到達したときに通知"
+            label="タイマー経過・完了通知"
+            description="計測中の経過時間と完了を通知"
             settingKey="timerCompletion"
           />
           

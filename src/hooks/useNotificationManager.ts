@@ -79,15 +79,14 @@ export const useNotificationManager = (options: NotificationManagerOptions) => {
       }
     }
 
-    // 10秒ごとに通知を更新
-    if (elapsed % 10 === 0 || elapsed === 1) {
-      showNotification('学習記録中', {
-        body,
-        icon: '/icon.svg',
-        tag: 'study-timer',
-        silent: true,
-      } as any);
-    }
+    // 1秒ごとに通知を更新
+    showNotification('学習記録中', {
+      body,
+      icon: '/icon.svg',
+      tag: 'study-timer',
+      silent: true,
+      renotify: false, // 音やバイブレーションを鳴らさない
+    } as any);
   }, [elapsed, isRunning, selectedCategory, isPomodoroMode, isPomodoroBreak, isNotificationEnabled, getCategoryName, showNotification]);
 
   // 長時間学習リマインダー
