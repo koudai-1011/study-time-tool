@@ -39,6 +39,7 @@ export interface Settings {
   notificationSettings?: NotificationSettings;
   reviewSettings?: ReviewSettings;
   enableSwipeNavigation?: boolean; // スワイプでのタブ遷移
+  reduceAnimations?: boolean; // アニメーションを減らす（軽量化）
 }
 
 export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart' | 'today_review';

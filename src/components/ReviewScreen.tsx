@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, CheckCircle, Trash2, Calendar as CalendarIcon, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckCircle, Trash2, Calendar as CalendarIcon, Settings, ChevronDown, ChevronRight, Save, ListPlus, X } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { getTodayReviews, formatDateYMD, calculateReviewDates, DEFAULT_REVIEW_INTERVALS } from '../utils/reviewSchedule';
 import { ReviewCalendar } from './ReviewCalendar';
@@ -13,22 +13,35 @@ export const ReviewScreen: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
   
+  // 一括追加用の一時リスト
+  const [pendingItems, setPendingItems] = useState<Array<{ content: string; categoryId: number }>>([]);
+  
   // アコーディオンの状態管理（カテゴリIDをキーにして開閉状態を保持）
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set(settings.categories.map(c => c.id)));
 
   const intervals = settings.reviewSettings?.intervals || DEFAULT_REVIEW_INTERVALS;
   const todayReviews = getTodayReviews(reviewItems, intervals);
 
-  const handleAdd = () => {
+  const handleAddToPending = () => {
     if (newContent.trim()) {
-      addReviewItem(newContent.trim(), newCategoryId);
+      setPendingItems([...pendingItems, { content: newContent.trim(), categoryId: newCategoryId }]);
       setNewContent('');
     }
   };
 
+  const handleSaveAll = () => {
+    pendingItems.forEach(item => {
+      addReviewItem(item.content, item.categoryId);
+    });
+    setPendingItems([]);
+  };
+
+  const removePendingItem = (index: number) => {
+    setPendingItems(pendingItems.filter((_, i) => i !== index));
+  };
+
   const handleSuggestionClick = (content: string, categoryId: number) => {
-    setNewContent(content);
-    setNewCategoryId(categoryId);
+    setPendingItems([...pendingItems, { content, categoryId }]);
   };
 
   const toggleCategory = (categoryId: number) => {
@@ -128,14 +141,26 @@ export const ReviewScreen: React.FC = () => {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               学習内容
             </label>
-            <input
-              type="text"
-              value={newContent}
-              onChange={(e) => setNewContent(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-              placeholder="例：英単語100個、微分積分の公式"
-              className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-800 dark:text-slate-100"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newContent}
+                onChange={(e) => setNewContent(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddToPending()}
+                placeholder="例：英単語100個、微分積分の公式"
+                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-800 dark:text-slate-100"
+              />
+              <motion.button
+                onClick={handleAddToPending}
+                disabled={!newContent.trim()}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-colors"
+                whileHover={{ scale: newContent.trim() ? 1.02 : 1 }}
+                whileTap={{ scale: newContent.trim() ? 0.98 : 1 }}
+              >
+                <ListPlus size={20} />
+                リストへ
+              </motion.button>
+            </div>
             
             {/* サジェストチップ */}
             {suggestions.length > 0 && (
@@ -160,16 +185,60 @@ export const ReviewScreen: React.FC = () => {
             )}
           </div>
 
-          <motion.button
-            onClick={handleAdd}
-            disabled={!newContent.trim()}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors"
-            whileHover={{ scale: newContent.trim() ? 1.02 : 1 }}
-            whileTap={{ scale: newContent.trim() ? 0.98 : 1 }}
-          >
-            <Plus size={20} />
-            追加
-          </motion.button>
+          {/* 追加待ちリスト */}
+          <AnimatePresence>
+            {pendingItems.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 border border-slate-200 dark:border-slate-700"
+              >
+                <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3 flex items-center justify-between">
+                  <span>追加待ちリスト ({pendingItems.length}件)</span>
+                  <span className="text-xs text-slate-500 font-normal">保存ボタンを押して確定してください</span>
+                </h4>
+                <div className="space-y-2 mb-4">
+                  {pendingItems.map((item, index) => {
+                    const category = settings.categories.find(c => c.id === item.categoryId);
+                    return (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 10 }}
+                        className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category?.color }}
+                          />
+                          <span className="text-slate-800 dark:text-slate-200">{item.content}</span>
+                        </div>
+                        <button
+                          onClick={() => removePendingItem(index)}
+                          className="text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+                
+                <motion.button
+                  onClick={handleSaveAll}
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-primary-500/30"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Save size={20} />
+                  {pendingItems.length}件をまとめて保存
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

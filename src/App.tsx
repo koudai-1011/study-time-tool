@@ -8,6 +8,8 @@ import { ReviewScreen } from './components/ReviewScreen';
 import { Settings } from './components/Settings';
 import { DialogProvider } from './context/DialogContext';
 
+import { MotionConfig } from 'framer-motion';
+
 // Component to handle dark mode class
 const DarkModeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { settings } = useStudy();
@@ -21,6 +23,18 @@ const DarkModeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) 
   }, [settings.isDarkMode]);
 
   return <>{children}</>;
+};
+
+// Component to handle global motion config
+const MotionConfigWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { settings } = useStudy();
+  const reduceAnimations = settings.reduceAnimations || false;
+
+  return (
+    <MotionConfig transition={reduceAnimations ? { duration: 0 } : undefined}>
+      {children}
+    </MotionConfig>
+  );
 };
 
 function App() {
@@ -47,14 +61,16 @@ function App() {
     <AuthProvider>
       <StudyProvider>
         <DarkModeWrapper>
-          <DialogProvider>
-            <Layout activeTab={activeTab} onTabChange={setActiveTab}>
-              {activeTab === 'dashboard' && <Dashboard />}
-              {activeTab === 'review' && <ReviewScreen />}
-              {activeTab === 'calendar' && <HistoryScreen />}
-              {activeTab === 'settings' && <Settings />}
-            </Layout>
-          </DialogProvider>
+          <MotionConfigWrapper>
+            <DialogProvider>
+              <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+                {activeTab === 'dashboard' && <Dashboard />}
+                {activeTab === 'review' && <ReviewScreen />}
+                {activeTab === 'calendar' && <HistoryScreen />}
+                {activeTab === 'settings' && <Settings />}
+              </Layout>
+            </DialogProvider>
+          </MotionConfigWrapper>
         </DarkModeWrapper>
       </StudyProvider>
     </AuthProvider>

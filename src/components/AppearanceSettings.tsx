@@ -1,5 +1,5 @@
 import React from 'react';
-import { Moon, Sun, Hand } from 'lucide-react';
+import { Moon, Sun, Hand, Zap } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 
 export const AppearanceSettings: React.FC = () => {
@@ -79,8 +79,35 @@ export const AppearanceSettings: React.FC = () => {
         </button>
       </div>
 
+      {/* アニメーション設定 */}
+      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white dark:bg-slate-700 rounded-lg">
+            <Zap className="text-amber-500" size={20} />
+          </div>
+          <div>
+            <h4 className="font-semibold text-slate-800 dark:text-slate-100">軽量化モード</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {settings.reduceAnimations ? 'アニメーションOFF' : 'アニメーションON'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => updateSettings({ ...settings, reduceAnimations: !settings.reduceAnimations })}
+          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+            settings.reduceAnimations ? 'bg-amber-500' : 'bg-slate-300'
+          }`}
+        >
+          <span
+            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+              settings.reduceAnimations ? 'translate-x-7' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        スワイプ操作を有効にすると、画面を左右にスワイプしてタブを切り替えられます（モバイル・タッチパッド対応）。
+        軽量化モードを有効にすると、アニメーションが無効になり、動作が軽快になります。古い端末やバッテリーを節約したい場合におすすめです。
       </p>
     </div>
   );
