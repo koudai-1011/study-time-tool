@@ -6,6 +6,7 @@ import { formatTime } from '../utils/timeFormat';
 import { useTimer } from '../hooks/useTimer';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useNotification } from '../hooks/useNotification';
+import { useNotificationManager } from '../hooks/useNotificationManager';
 
 interface TimerProps {
   fullscreen?: boolean;
@@ -72,6 +73,15 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   const { requestWakeLock, releaseWakeLock } = useWakeLock();
   const { requestPermission, closeNotification } = useNotification();
   
+  // Notification manager integration for standard timer
+  useNotificationManager({
+    elapsed,
+    isRunning,
+    selectedCategory,
+    isPomodoroMode: false,
+    isPomodoroBreak: false,
+  });
+
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Disable global swipe navigation when timer is fullscreen

@@ -110,7 +110,9 @@ export const NotificationSettings: React.FC = () => {
       </div>
 
       {/* 通知の種類 */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+      <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 transition-opacity duration-300 ${
+        !notifSettings.enabled ? 'opacity-50 pointer-events-none grayscale' : ''
+      }`}>
         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">通知の種類</h3>
         
         <div className="space-y-0">
@@ -167,7 +169,9 @@ export const NotificationSettings: React.FC = () => {
 
       {/* ポモドーロ設定 */}
       {notifSettings.pomodoroTimer && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+        <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 transition-opacity duration-300 ${
+          !notifSettings.enabled ? 'opacity-50 pointer-events-none grayscale' : ''
+        }`}>
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">ポモドーロタイマー設定</h3>
           
           <div className="grid grid-cols-2 gap-4">
@@ -210,11 +214,13 @@ export const NotificationSettings: React.FC = () => {
         </div>
       )}
 
-      {/* その他の設定 */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">詳細設定</h3>
-        
-        <div className="space-y-4">
+      {/* Reminder times */}
+      {(notifSettings.dailyReminder || notifSettings.eveningReminder || notifSettings.longStudyBreak) && (
+        <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 transition-opacity duration-300 ${
+          !notifSettings.enabled ? 'opacity-50 pointer-events-none grayscale' : ''
+        }`}>
+          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">リマインダー設定</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {notifSettings.dailyReminder && (
             <div>
               <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
@@ -269,7 +275,8 @@ export const NotificationSettings: React.FC = () => {
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
 
       {/* 保存ボタン */}
       <button

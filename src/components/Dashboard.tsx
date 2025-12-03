@@ -4,6 +4,7 @@ import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
 import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
+import type { DashboardWidget } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { StatCard } from './StatCard';
 import { CategoryChart } from './CategoryChart';
@@ -47,17 +48,24 @@ export const Dashboard: React.FC = () => {
   // Real-time daily goal (hours/day) that updates every second as remaining time decreases.
   const realtimeDailyGoal = hoursUntilEnd > 0 ? (remainingHoursToStudy / hoursUntilEnd) * 24 : 0;
 
-  const layout = settings.dashboardLayout || {
-    widgets: [
-      { id: 'start_timer', visible: true, order: 0 },
-      { id: 'pomodoro_timer', visible: true, order: 1 },
-      { id: 'progress', visible: true, order: 2 },
-      { id: 'daily_goal', visible: true, order: 3 },
-      { id: 'today_study', visible: true, order: 4 },
-      { id: 'total_study', visible: true, order: 5 },
-      { id: 'remaining_time', visible: true, order: 6 },
-      { id: 'category_chart', visible: true, order: 7 },
-    ]
+  // Default widgets definition
+  const defaultWidgets: DashboardWidget[] = [
+    { id: 'start_timer', visible: true, order: 0 },
+    { id: 'pomodoro_timer', visible: true, order: 1 },
+    { id: 'progress', visible: true, order: 2 },
+    { id: 'daily_goal', visible: true, order: 3 },
+    { id: 'today_study', visible: true, order: 4 },
+    { id: 'total_study', visible: true, order: 5 },
+    { id: 'remaining_time', visible: true, order: 6 },
+    { id: 'category_chart', visible: true, order: 7 },
+  ];
+
+  // Merge saved layout with default widgets to ensure new widgets appear
+  const layout = {
+    widgets: defaultWidgets.map(defaultWidget => {
+      const savedWidget = settings.dashboardLayout?.widgets.find(w => w.id === defaultWidget.id);
+      return savedWidget || defaultWidget;
+    }).sort((a, b) => a.order - b.order)
   };
 
   return (
