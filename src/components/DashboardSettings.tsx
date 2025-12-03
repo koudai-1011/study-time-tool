@@ -23,6 +23,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 const WIDGET_LABELS: Record<DashboardWidgetType, string> = {
   start_timer: '計測開始ボタン',
+  pomodoro_timer: '🍅 ポモドーロタイマー',
   progress: '全体の進捗',
   daily_goal: '1日の目標',
   today_study: '今日の学習',
@@ -95,12 +96,13 @@ export const DashboardSettings: React.FC = () => {
   const layout = settings.dashboardLayout || {
     widgets: [
       { id: 'start_timer', visible: true, order: 0 },
-      { id: 'progress', visible: true, order: 1 },
-      { id: 'daily_goal', visible: true, order: 2 },
-      { id: 'today_study', visible: true, order: 3 },
-      { id: 'total_study', visible: true, order: 4 },
-      { id: 'remaining_time', visible: true, order: 5 },
-      { id: 'category_chart', visible: true, order: 6 },
+      { id: 'pomodoro_timer', visible: true, order: 1 },
+      { id: 'progress', visible: true, order: 2 },
+      { id: 'daily_goal', visible: true, order: 3 },
+      { id: 'today_study', visible: true, order: 4 },
+      { id: 'total_study', visible: true, order: 5 },
+      { id: 'remaining_time', visible: true, order: 6 },
+      { id: 'category_chart', visible: true, order: 7 },
     ]
   };
 

@@ -66,12 +66,11 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     setSelectedCategory, 
     start, 
     stop, 
-    reset,
-    startTime 
+    reset
   } = useTimer(settings.defaultCategoryId ?? 0);
   
   const { requestWakeLock, releaseWakeLock } = useWakeLock();
-  const { requestPermission, showNotification, closeNotification } = useNotification();
+  const { requestPermission, closeNotification } = useNotification();
   
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
@@ -89,31 +88,15 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
     start();
   };
 
-  // Handle side effects (WakeLock, Notification)
+  // Handle side effects (WakeLock)
   useEffect(() => {
     if (isRunning) {
       requestWakeLock();
-      
-      // Show initial notification
-      if (elapsed === 0 || elapsed % 10 === 0) { // Update periodically or on start
-         const category = settings.categories.find(c => c.id === selectedCategory) || settings.categories[0];
-         // Calculate start time for the timestamp if not available from hook (fallback)
-         const currentStartTime = startTime || (Date.now() - (elapsed * 1000));
-         
-         showNotification('学習記録', {
-           body: `${category.name}で学習中...`,
-           icon: '/vite.svg',
-           tag: 'study-timer',
-           renotify: false,
-           silent: true,
-           timestamp: currentStartTime,
-         } as any);
-      }
     } else {
       releaseWakeLock();
       closeNotification();
     }
-  }, [isRunning, elapsed, selectedCategory, settings.categories, requestWakeLock, releaseWakeLock, showNotification, closeNotification, startTime]);
+  }, [isRunning, requestWakeLock, releaseWakeLock, closeNotification]);
 
   // Ensure selectedCategory is valid
   useEffect(() => {

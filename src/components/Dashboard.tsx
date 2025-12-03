@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
+import { PomodoroTimer } from './PomodoroTimer';
 import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { StatCard } from './StatCard';
@@ -49,12 +50,13 @@ export const Dashboard: React.FC = () => {
   const layout = settings.dashboardLayout || {
     widgets: [
       { id: 'start_timer', visible: true, order: 0 },
-      { id: 'progress', visible: true, order: 1 },
-      { id: 'daily_goal', visible: true, order: 2 },
-      { id: 'today_study', visible: true, order: 3 },
-      { id: 'total_study', visible: true, order: 4 },
-      { id: 'remaining_time', visible: true, order: 5 },
-      { id: 'category_chart', visible: true, order: 6 },
+      { id: 'pomodoro_timer', visible: true, order: 1 },
+      { id: 'progress', visible: true, order: 2 },
+      { id: 'daily_goal', visible: true, order: 3 },
+      { id: 'today_study', visible: true, order: 4 },
+      { id: 'total_study', visible: true, order: 5 },
+      { id: 'remaining_time', visible: true, order: 6 },
+      { id: 'category_chart', visible: true, order: 7 },
     ]
   };
 
@@ -86,6 +88,13 @@ export const Dashboard: React.FC = () => {
                     <Maximize2 size={24} />
                     計測開始
                   </motion.button>
+                );
+
+              case 'pomodoro_timer':
+                return (
+                  <div key="pomodoro_timer" className="col-span-1 md:col-span-2 lg:col-span-4">
+                    <PomodoroTimer />
+                  </div>
                 );
 
               case 'progress':
