@@ -75,7 +75,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
         >
           <div className="flex items-center gap-2">
             <Clock className="text-primary-600 dark:text-primary-400" size={28} />
-            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">学習記録</h1>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">焦らせてくる勉強記録</h1>
           </div>
         </motion.div>
 
@@ -110,7 +110,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
       >
         <div className="flex items-center gap-2">
           <Clock className="text-primary-600 dark:text-primary-400" size={24} />
-          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">学習記録</h1>
+          <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">焦らせてくる勉強記録</h1>
         </div>
       </motion.div>
 
