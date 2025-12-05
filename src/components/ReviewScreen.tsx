@@ -73,8 +73,13 @@ export const ReviewScreen: React.FC = () => {
 
   const handleRangeSubmit = () => {
     if (rangeModal.suggestion && rangeStart && rangeEnd) {
-      const unitStr = rangeModal.suggestion.unit ? `${rangeModal.suggestion.unit}` : '';
-      const content = `${rangeModal.suggestion.content} ${rangeStart}〜${rangeEnd}${unitStr}`;
+      const unitStr = rangeModal.suggestion.unit || '';
+      // 単位が*で始まる場合は前置き
+      const isBefore = unitStr.startsWith('*');
+      const cleanUnit = isBefore ? unitStr.slice(1) : unitStr;
+      const content = isBefore 
+        ? `${rangeModal.suggestion.content} ${cleanUnit}${rangeStart}〜${rangeEnd}`
+        : `${rangeModal.suggestion.content} ${rangeStart}〜${rangeEnd}${cleanUnit}`;
       
       setPendingItems([...pendingItems, { 
         content, 
@@ -365,12 +370,16 @@ export const ReviewScreen: React.FC = () => {
       {/* 範囲入力モーダル */}
       <AnimatePresence>
         {rangeModal.isOpen && rangeModal.suggestion && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={() => setRangeModal({ isOpen: false, suggestion: null })}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden p-6"
+              onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
                 範囲を入力
@@ -381,24 +390,26 @@ export const ReviewScreen: React.FC = () => {
               
               <div className="flex items-center gap-2 mb-6">
                 <input
-                  type="number" // 数字入力用
+                  type="number"
                   value={rangeStart}
                   onChange={(e) => setRangeStart(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && rangeStart && rangeEnd && handleRangeSubmit()}
                   placeholder="開始"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-center"
                   autoFocus
                 />
                 <span className="text-slate-400">〜</span>
                 <input
-                  type="number" // 数字入力用
+                  type="number"
                   value={rangeEnd}
                   onChange={(e) => setRangeEnd(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && rangeStart && rangeEnd && handleRangeSubmit()}
                   placeholder="終了"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-center"
                 />
                 {rangeModal.suggestion.unit && (
                   <span className="text-slate-500 dark:text-slate-400 text-sm whitespace-nowrap">
-                    {rangeModal.suggestion.unit}
+                    {rangeModal.suggestion.unit.startsWith('*') ? rangeModal.suggestion.unit.slice(1) : rangeModal.suggestion.unit}
                   </span>
                 )}
               </div>

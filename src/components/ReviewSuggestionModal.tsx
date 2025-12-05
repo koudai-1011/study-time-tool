@@ -15,13 +15,17 @@ export const ReviewSuggestionModal: React.FC<ReviewSuggestionModalProps> = ({ is
   const [showHelp, setShowHelp] = useState(false);
   const [useRange, setUseRange] = useState(false);
   const [unit, setUnit] = useState('');
+  const [unitPosition, setUnitPosition] = useState<'before' | 'after'>('after'); // 単位の位置
 
   const handleAdd = () => {
     if (newContent.trim()) {
-      addSuggestion(newContent.trim(), categoryId, useRange, unit.trim());
+      // 単位の位置を保存（unitの先頭に*を付けると前置き）
+      const unitWithPosition = useRange && unit.trim() ? (unitPosition === 'before' ? `*${unit.trim()}` : unit.trim()) : '';
+      addSuggestion(newContent.trim(), categoryId, useRange, unitWithPosition);
       setNewContent('');
       setUseRange(false);
       setUnit('');
+      setUnitPosition('after');
     }
   };
 
@@ -115,7 +119,7 @@ export const ReviewSuggestionModal: React.FC<ReviewSuggestionModalProps> = ({ is
                   </div>
 
                   {/* 範囲入力設定 */}
-                  <div className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-700/30 rounded-lg space-y-3">
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
                         type="checkbox"
@@ -127,13 +131,34 @@ export const ReviewSuggestionModal: React.FC<ReviewSuggestionModalProps> = ({ is
                     </label>
                     
                     {useRange && (
-                      <input
-                        type="text"
-                        value={unit}
-                        onChange={(e) => setUnit(e.target.value)}
-                        placeholder="単位 (例: p, No.)"
-                        className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-sm"
-                      />
+                      <div className="flex flex-col gap-2 pl-6">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={unit}
+                            onChange={(e) => setUnit(e.target.value)}
+                            placeholder="単位 (例: p, No.)"
+                            className="flex-1 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded text-sm"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-slate-500 dark:text-slate-400">位置:</span>
+                          <button
+                            type="button"
+                            onClick={() => setUnitPosition('before')}
+                            className={`px-2 py-1 text-xs rounded ${unitPosition === 'before' ? 'bg-primary-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                          >
+                            前 (p.1〜10)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setUnitPosition('after')}
+                            className={`px-2 py-1 text-xs rounded ${unitPosition === 'after' ? 'bg-primary-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                          >
+                            後 (1〜10p.)
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
 
