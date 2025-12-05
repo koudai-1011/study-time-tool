@@ -25,6 +25,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (Capacitor.isNativePlatform()) {
+      GoogleAuth.initialize();
+    }
+  }, []);
+
   const signInWithGoogle = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
@@ -34,8 +40,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         await signInWithPopup(auth, googleProvider);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error signing in with Google", error);
+      if (Capacitor.isNativePlatform()) {
+        alert(`Googleログインエラー: ${error.message || JSON.stringify(error)}`);
+      }
       throw error;
     }
   };

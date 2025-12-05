@@ -9,6 +9,7 @@ import { DashboardSettings } from './DashboardSettings';
 import { AppearanceSettings } from './AppearanceSettings';
 import { NotificationSettings } from './NotificationSettings';
 import { ReviewSettings } from './ReviewSettings';
+import { NotificationSettingsModal } from './NotificationSettingsModal';
 // import { GoogleCalendarSettings } from './GoogleCalendarSettings'; // 凍結中
 
 type SettingSection = 'account' | 'appearance' | 'dashboard' | 'notification' | 'review' | 'category' | 'goal' | 'data';
@@ -54,6 +55,7 @@ const settingGroups: SettingGroup[] = [
 
 export const Settings: React.FC = () => {
   const [expandedSections, setExpandedSections] = useState<Set<SettingSection>>(new Set());
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
 
   const toggleSection = (sectionId: SettingSection) => {
     const newExpanded = new Set(expandedSections);
@@ -85,6 +87,28 @@ export const Settings: React.FC = () => {
           {/* グループ内のセクション */}
           <div className="space-y-2">
             {group.sections.map((section) => {
+              // 通知設定は特別扱い（モーダルで開く）
+              if (section.id === 'notification') {
+                return (
+                  <motion.div
+                    key={section.id}
+                    className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm"
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <button
+                      onClick={() => setIsNotificationModalOpen(true)}
+                      className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                    >
+                      <h4 className="text-base font-semibold text-slate-800 dark:text-slate-100">{section.title}</h4>
+                      <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 text-sm font-bold">
+                        設定を開く
+                        <ChevronDown size={18} className="rotate-[-90deg]" />
+                      </div>
+                    </button>
+                  </motion.div>
+                );
+              }
+
               const isExpanded = expandedSections.has(section.id);
               return (
                 <motion.div
@@ -128,6 +152,11 @@ export const Settings: React.FC = () => {
           </div>
         </div>
       ))}
+
+      <NotificationSettingsModal 
+        isOpen={isNotificationModalOpen} 
+        onClose={() => setIsNotificationModalOpen(false)} 
+      />
     </div>
   );
 };
