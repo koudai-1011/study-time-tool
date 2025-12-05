@@ -13,6 +13,8 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
   const { isSwipeEnabled, settings } = useStudy();
   const reviewEnabled = settings.reviewSettings?.enabled || false;
+  const reduceAnimations = settings.reduceAnimations || false;
+  
   const tabs: Array<'dashboard' | 'review' | 'calendar' | 'settings'> = reviewEnabled 
     ? ['dashboard', 'review', 'calendar', 'settings']
     : ['dashboard', 'calendar', 'settings'];
@@ -42,7 +44,12 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
     trackTouch: true,
   });
 
-  const pageVariants = {
+  // 軽量化モード時はアニメーションなし
+  const pageVariants = reduceAnimations ? {
+    initial: {},
+    animate: {},
+    exit: {},
+  } : {
     initial: (direction: number) => ({
       x: direction > 0 ? 100 : -100,
       opacity: 0,
@@ -68,15 +75,19 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
     }),
   };
 
+  // 軽量化モード時のトランジション設定
+  const instantTransition = { duration: 0 };
+  const springTransition = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex">
       {/* Sidebar */}
       <aside className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-800 border-r border-slate-100 dark:border-slate-700 shadow-sm">
         <motion.div
           className="p-6 border-b border-slate-100 dark:border-slate-700"
-          initial={{ opacity: 0, y: -20 }}
+          initial={reduceAnimations ? false : { opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={reduceAnimations ? instantTransition : { duration: 0.4 }}
         >
           <div className="flex items-center gap-2">
             <Clock className="text-primary-600 dark:text-primary-400" size={28} />
@@ -90,6 +101,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             label="ホーム"
             isActive={activeTab === 'dashboard'}
             onClick={() => onTabChange('dashboard')}
+            reduceAnimations={reduceAnimations}
           />
           {reviewEnabled && (
             <NavItem
@@ -97,6 +109,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
               label="復習"
               isActive={activeTab === 'review'}
               onClick={() => onTabChange('review')}
+              reduceAnimations={reduceAnimations}
             />
           )}
           <NavItem
@@ -104,12 +117,14 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             label="学習履歴"
             isActive={activeTab === 'calendar'}
             onClick={() => onTabChange('calendar')}
+            reduceAnimations={reduceAnimations}
           />
           <NavItem
             icon={<SettingsIcon size={20} />}
             label="設定"
             isActive={activeTab === 'settings'}
             onClick={() => onTabChange('settings')}
+            reduceAnimations={reduceAnimations}
           />
         </nav>
       </aside>
@@ -117,9 +132,9 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
       {/* Mobile Header */}
       <motion.div
         className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 shadow-sm z-10 flex items-center justify-center"
-        initial={{ y: -100 }}
+        initial={reduceAnimations ? false : { y: -100 }}
         animate={{ y: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        transition={reduceAnimations ? instantTransition : springTransition}
       >
         <div className="flex items-center gap-2">
           <Clock className="text-primary-600 dark:text-primary-400" size={24} />
@@ -130,33 +145,39 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 pb-20 md:pb-8 overflow-auto" {...handlers}>
         <div className="max-w-5xl mx-auto">
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={activeTab}
-              custom={direction}
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
+          {reduceAnimations ? (
+            // 軽量化モード時はAnimatePresenceなしで直接レンダリング
+            <div key={activeTab}>{children}</div>
+          ) : (
+            <AnimatePresence mode="wait" custom={direction}>
+              <motion.div
+                key={activeTab}
+                custom={direction}
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          )}
         </div>
       </main>
 
       {/* Mobile Navigation */}
       <motion.nav
         className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 shadow-lg flex items-center justify-around px-4 pb-safe"
-        initial={{ y: 100 }}
+        initial={reduceAnimations ? false : { y: 100 }}
         animate={{ y: 0 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        transition={reduceAnimations ? instantTransition : springTransition}
       >
         <MobileNavItem
           icon={<LayoutDashboard size={24} />}
           label="ホーム"
           isActive={activeTab === 'dashboard'}
           onClick={() => onTabChange('dashboard')}
+          reduceAnimations={reduceAnimations}
         />
         {reviewEnabled && (
           <MobileNavItem
@@ -164,6 +185,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
             label="復習"
             isActive={activeTab === 'review'}
             onClick={() => onTabChange('review')}
+            reduceAnimations={reduceAnimations}
           />
         )}
         <MobileNavItem
@@ -171,50 +193,54 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
           label="学習履歴"
           isActive={activeTab === 'calendar'}
           onClick={() => onTabChange('calendar')}
+          reduceAnimations={reduceAnimations}
         />
         <MobileNavItem
           icon={<SettingsIcon size={24} />}
           label="設定"
           isActive={activeTab === 'settings'}
           onClick={() => onTabChange('settings')}
+          reduceAnimations={reduceAnimations}
         />
       </motion.nav>
     </div>
   );
 };
 
-const NavItem = ({ icon, label, isActive, onClick }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void }) => (
+const NavItem = ({ icon, label, isActive, onClick, reduceAnimations = false }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void, reduceAnimations?: boolean }) => (
   <motion.button
     onClick={onClick}
     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium ${isActive
         ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 shadow-sm'
         : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'
       }`}
-    whileHover={{ scale: 1.02, x: 4 }}
-    whileTap={{ scale: 0.98 }}
-    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    whileHover={reduceAnimations ? undefined : { scale: 1.02, x: 4 }}
+    whileTap={reduceAnimations ? undefined : { scale: 0.98 }}
   >
     {icon}
     <span>{label}</span>
   </motion.button>
 );
 
-const MobileNavItem = ({ icon, label, isActive, onClick }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void }) => (
+const MobileNavItem = ({ icon, label, isActive, onClick, reduceAnimations = false }: { icon: React.ReactNode, label: string, isActive: boolean, onClick: () => void, reduceAnimations?: boolean }) => (
   <motion.button
     onClick={onClick}
     className={`flex flex-col items-center gap-1 py-2 px-4 rounded-lg transition-all ${isActive
         ? 'text-primary-600 dark:text-primary-400'
         : 'text-slate-400 dark:text-slate-500'
       }`}
-    whileTap={{ scale: 0.9 }}
-    transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+    whileTap={reduceAnimations ? undefined : { scale: 0.9 }}
   >
-    <motion.div
-      animate={{ scale: isActive ? 1.1 : 1 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-    >
-      {icon}
-    </motion.div>
+    {reduceAnimations ? (
+      <div>{icon}</div>
+    ) : (
+      <motion.div
+        animate={{ scale: isActive ? 1.1 : 1 }}
+        transition={{ type: 'spring' as const, stiffness: 400, damping: 25 }}
+      >
+        {icon}
+      </motion.div>
+    )}
     <span className="text-xs font-medium">{label}</span>
   </motion.button>
 );
