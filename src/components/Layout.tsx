@@ -131,19 +131,29 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
 
       {/* Mobile Header */}
       <motion.div
-        className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 shadow-sm z-10 flex items-center justify-center"
+        className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700 shadow-sm z-10 flex items-center justify-center"
         initial={reduceAnimations ? false : { y: -100 }}
         animate={{ y: 0 }}
         transition={reduceAnimations ? instantTransition : springTransition}
+        style={{ 
+          height: 'calc(3.5rem + env(safe-area-inset-top))', 
+          paddingTop: 'env(safe-area-inset-top)' 
+        }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 h-14">
           <Clock className="text-primary-600 dark:text-primary-400" size={24} />
           <h1 className="text-lg font-bold text-slate-800 dark:text-slate-100">焦らせてくる勉強記録</h1>
         </div>
       </motion.div>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 pt-20 md:pt-8 pb-20 md:pb-8 overflow-auto" {...handlers}>
+      <main 
+        className="flex-1 p-4 md:p-8 md:pt-8 pb-20 md:pb-8 overflow-auto" 
+        style={{
+          paddingTop: 'calc(4.5rem + env(safe-area-inset-top))'
+        }}
+        {...handlers}
+      >
         <div className="max-w-5xl mx-auto">
           {reduceAnimations ? (
             // 軽量化モード時はAnimatePresenceなしで直接レンダリング

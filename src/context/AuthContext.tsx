@@ -27,7 +27,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
-      GoogleAuth.initialize();
+      GoogleAuth.initialize({
+        clientId: '713436990234-4d53kon3vjgm6m4sm7e93apn5lhb5crr.apps.googleusercontent.com',
+        scopes: ['profile', 'email'],
+        grantOfflineAccess: true,
+      });
     }
   }, []);
 
