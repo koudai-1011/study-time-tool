@@ -50,7 +50,11 @@ export interface DashboardWidget {
   id: DashboardWidgetType;
   visible: boolean;
   order: number;
-  size: DashboardWidgetSize; // small=1列, medium=1列(高さ大), large=2列, full=全幅
+  size: DashboardWidgetSize; // 後方互換性のため残す
+  width?: number;  // 1-4マス（新仕様）
+  height?: number; // 1-4マス（新仕様）
+  gridX?: number;  // グリッド上のX位置
+  gridY?: number;  // グリッド上のY位置
 }
 
 export interface DashboardLayout {
