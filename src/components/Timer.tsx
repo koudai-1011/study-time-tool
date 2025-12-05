@@ -146,7 +146,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   };
 
   const CategorySelector = () => (
-    <div className="flex flex-wrap gap-2 justify-center mx-auto max-w-sm">
+    <div className="grid grid-cols-5 gap-2 justify-center mx-auto max-w-xs">
       {settings.categories.map(category => (
         <button
           key={category.id}

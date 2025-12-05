@@ -105,29 +105,31 @@ const SortableWidget: React.FC<SortableWidgetProps> = ({
       style={style}
       className={`${sizeClass} relative ${isDragging ? 'opacity-90 scale-105' : ''}`}
     >
-      {/* ウィジェット本体 */}
-      <div className="opacity-60">
+      {/* ウィジェット本体（薄く表示） */}
+      <div className="opacity-40 pointer-events-none">
         {children}
       </div>
       
-      {/* 編集オーバーレイ - ドラッグハンドル */}
-      <div 
-        className="absolute inset-0 rounded-2xl border-2 border-dashed border-primary-400 bg-primary-500/10 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing"
-        {...attributes}
-        {...listeners}
-      >
-        {/* ウィジェット名 */}
-        <span className="text-primary-700 dark:text-primary-300 text-xs font-bold mb-2 bg-white dark:bg-slate-800 px-2 py-1 rounded">
-          {WIDGET_NAMES[widget.id]}
-        </span>
+      {/* 編集オーバーレイ */}
+      <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-primary-400 bg-primary-500/5 flex flex-col">
+        {/* ドラッグハンドル（上部） */}
+        <div 
+          className="flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing"
+          {...attributes}
+          {...listeners}
+        >
+          <div className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
+            <span className="text-primary-700 dark:text-primary-300 text-xs font-bold">
+              ⋮⋮ {WIDGET_NAMES[widget.id]}
+            </span>
+          </div>
+        </div>
         
-        {/* コントロールボタン */}
-        <div className="flex gap-2">
-          {/* サイズ: 小 */}
+        {/* コントロールボタン（下部） */}
+        <div className="flex gap-2 justify-center pb-3">
           <button
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSizeChange(widget.id, 'small'); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+            onClick={() => onSizeChange(widget.id, 'small')}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shadow-sm ${
               widget.size === 'small' 
                 ? 'bg-primary-600 text-white' 
                 : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
@@ -137,11 +139,9 @@ const SortableWidget: React.FC<SortableWidgetProps> = ({
             <Square size={14} />
           </button>
           
-          {/* サイズ: 大 */}
           <button
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSizeChange(widget.id, 'large'); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+            onClick={() => onSizeChange(widget.id, 'large')}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shadow-sm ${
               widget.size === 'large' || widget.size === 'full'
                 ? 'bg-primary-600 text-white' 
                 : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
@@ -151,11 +151,9 @@ const SortableWidget: React.FC<SortableWidgetProps> = ({
             <RectangleHorizontal size={14} />
           </button>
 
-          {/* 非表示 */}
           <button
-            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onVisibilityChange(widget.id); }}
-            onPointerDown={(e) => e.stopPropagation()}
-            className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800"
+            onClick={() => onVisibilityChange(widget.id)}
+            className="w-9 h-9 rounded-lg flex items-center justify-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 shadow-sm"
             title="非表示にする"
           >
             <EyeOff size={14} />
