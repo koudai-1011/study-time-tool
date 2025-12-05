@@ -195,6 +195,11 @@ export const Dashboard: React.FC = () => {
   };
 
   const visibleWidgets = layout.widgets.filter(w => w.visible);
+  
+  useEffect(() => {
+    console.log('Visible Widgets:', visibleWidgets);
+  }, [visibleWidgets]);
+
   const usedWidgetIds = visibleWidgets.map(w => w.id);
 
   // グリッドマップを生成
@@ -438,6 +443,20 @@ export const Dashboard: React.FC = () => {
           </div>
         );
 
+      case 'sabotage':
+        return (
+          <div 
+            className="w-full h-full bg-slate-800 text-white rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer shadow-md border-2 border-slate-700 hover:bg-slate-700 transition-colors relative z-10"
+            onClick={() => !isEditMode && setShowSabotageModal(true)}
+          >
+            <Skull className="text-red-500" size={w > 1 ? 20 : 14} />
+            <span className={`font-bold ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
+              サボる
+            </span>
+            {w > 1 && <span className="text-[10px] font-medium text-slate-400">モード</span>}
+          </div>
+        );
+
       case 'today_review':
         return (
           <div className="w-full h-full overflow-hidden rounded-xl">
@@ -457,8 +476,8 @@ export const Dashboard: React.FC = () => {
     return (
       <div className="fixed inset-0 z-40 bg-slate-50 dark:bg-slate-900 flex flex-col">
         {/* ヘッダー */}
-        <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
-          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">レイアウト編集</h2>
+        <header className="flex justify-between items-center p-4 pt-[calc(env(safe-area-inset-top)+1rem)] border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 sticky top-0 z-50">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 mt-2">レイアウト編集</h2>
           <button
             onClick={() => {
               setIsEditMode(false);
@@ -466,7 +485,7 @@ export const Dashboard: React.FC = () => {
               setIsEditing(false);
               setMovingWidget(null);
             }}
-            className="p-2 rounded-xl bg-primary-600 text-white"
+            className="p-2 rounded-xl bg-primary-600 text-white mt-2 shadow-sm"
           >
             <Check size={20} />
           </button>

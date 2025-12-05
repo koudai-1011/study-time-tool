@@ -49,6 +49,7 @@ export const useStudyData = (user: User | null) => {
         { id: 'total_study', visible: true, order: 5, size: 'small' },
         { id: 'remaining_time', visible: true, order: 6, size: 'small' },
         { id: 'category_chart', visible: true, order: 7, size: 'large' },
+        { id: 'sabotage', visible: true, order: 8, size: 'small' },
       ]
     }
   });
@@ -58,34 +59,42 @@ export const useStudyData = (user: User | null) => {
 
   // Migration function to ensure start_timer widget exists and has size
   const migrateSettings = (loadedSettings: Settings): Settings => {
-    if (!loadedSettings.dashboardLayout) {
-      return loadedSettings;
-    }
+    const loadedWidgets = loadedSettings.dashboardLayout?.widgets || [];
+    // ディープコピーして変更可能にする
+    let widgets = [...loadedWidgets];
 
-    let widgets = loadedSettings.dashboardLayout.widgets;
+    // sabotageウィジェットがない場合は追加
+    if (!widgets.some(w => w.id === 'sabotage')) {
+      widgets.push({
+        id: 'sabotage',
+        visible: true,
+        order: widgets.length,
+        size: 'small',
+        width: 2,
+        height: 1,
+        gridX: 2,
+        gridY: 6
+      });
+    }
+    
+    // start_timerウィジェットがない場合は追加（既存ロジック）
     const hasStartTimer = widgets.some(w => w.id === 'start_timer');
-    
     if (!hasStartTimer) {
-      // Add start_timer as the first widget
-      widgets = [
-        { id: 'start_timer' as const, visible: true, order: 0, size: 'full' as const },
-        ...widgets.map(w => ({
-          ...w,
-          order: w.order + 1
-        }))
-      ];
+      widgets.unshift({
+        id: 'start_timer',
+        visible: true,
+        order: 0,
+        size: 'large'
+      });
+      // Re-index orders
+      widgets = widgets.map((w, index) => ({ ...w, order: index }));
     }
 
-    // Ensure all widgets have size property
-    widgets = widgets.map(w => ({
-      ...w,
-      size: w.size || (w.id === 'start_timer' || w.id === 'pomodoro_timer' ? 'full' : 
-             w.id === 'progress' || w.id === 'category_chart' || w.id === 'today_review' ? 'large' : 'small')
-    }));
-    
     return {
       ...loadedSettings,
-      dashboardLayout: { widgets }
+      dashboardLayout: {
+        widgets
+      }
     };
   };
 
@@ -124,10 +133,10 @@ export const useStudyData = (user: User | null) => {
           const stored = localStorage.getItem(STORAGE_KEY);
           if (stored) {
             const parsed = JSON.parse(stored);
-            const initialSettings = {
+            const initialSettings = migrateSettings({
               ...parsed.settings,
               categories: parsed.settings.categories || DEFAULT_CATEGORIES
-            };
+            });
             const initialLogs = parsed.logs || [];
             
             // Set state immediately
@@ -136,6 +145,16 @@ export const useStudyData = (user: User | null) => {
             
             // Save to Firestore immediately
             setDoc(userDocRef, { settings: initialSettings, logs: initialLogs }, { merge: true });
+          } else {
+             // Completely new user from scratch - apply migration just in case default settings are old
+             const defaultWithMigration = migrateSettings({
+                 targetHours: 0,
+                 startDate: '',
+                 endDate: '',
+                 categories: DEFAULT_CATEGORIES,
+                 dashboardLayout: { widgets: [] } // Will trigger migration to add all defaults
+             });
+             setSettings(defaultWithMigration);
           }
         }
         setIsInitialized(true);

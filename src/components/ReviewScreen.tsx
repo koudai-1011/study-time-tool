@@ -6,8 +6,11 @@ import { getTodayReviews, formatDateYMD, calculateReviewDates, DEFAULT_REVIEW_IN
 import { ReviewCalendar } from './ReviewCalendar';
 import { ReviewSuggestionModal } from './ReviewSuggestionModal';
 
+import { useDialog } from '../context/DialogContext';
+
 export const ReviewScreen: React.FC = () => {
   const { reviewItems, addReviewItem, deleteReviewItem, completeReview, settings, suggestions } = useStudy();
+  const { confirm, alert } = useDialog();
   const [newContent, setNewContent] = useState('');
   const [newCategoryId, setNewCategoryId] = useState(settings.categories[0]?.id || 0);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -121,10 +124,16 @@ export const ReviewScreen: React.FC = () => {
   };
 
   // CSVエクスポート
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (reviewItems.length === 0) return;
     
-    if (!window.confirm('学習記録をCSV形式でダウンロードしますか？')) {
+    const result = await confirm('学習記録をCSV形式でダウンロードしますか？', {
+      confirmText: 'ダウンロード',
+      cancelText: 'キャンセル',
+      type: 'info' // アイコンをinfoにする（dangerではないため）
+    });
+
+    if (!result) {
       return;
     }
 

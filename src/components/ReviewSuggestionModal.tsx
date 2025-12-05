@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, Trash2, Tag, HelpCircle } from 'lucide-react';
+import { X, Plus, Trash2, Tag, HelpCircle, ChevronDown } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 
 interface ReviewSuggestionModalProps {
@@ -14,6 +14,7 @@ export const ReviewSuggestionModal: React.FC<ReviewSuggestionModalProps> = ({ is
   const [categoryId, setCategoryId] = useState(settings.categories[0]?.id || 0);
   const [showHelp, setShowHelp] = useState(false);
   const [useRange, setUseRange] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [unit, setUnit] = useState('');
   const [unitPosition, setUnitPosition] = useState<'before' | 'after'>('after'); // 単位の位置
 
@@ -97,16 +98,76 @@ export const ReviewSuggestionModal: React.FC<ReviewSuggestionModalProps> = ({ is
                   新しいサジェストを追加
                 </label>
                 <div className="space-y-3">
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <select
-                      value={categoryId}
-                      onChange={(e) => setCategoryId(Number(e.target.value))}
-                      className="w-full sm:w-auto px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm"
-                    >
-                      {settings.categories.map(c => (
-                        <option key={c.id} value={c.id}>{c.name}</option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col sm:flex-row gap-2 relative z-20">
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                        className="w-full sm:w-48 px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm flex items-center justify-between gap-2 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: settings.categories.find(c => c.id === categoryId)?.color }}
+                          />
+                          <span className="text-slate-700 dark:text-slate-200 truncate">
+                            {settings.categories.find(c => c.id === categoryId)?.name}
+                          </span>
+                        </div>
+                        <ChevronDown 
+                          size={16} 
+                          className={`text-slate-400 transition-transform duration-200 ${isCategoryOpen ? 'rotate-180' : ''}`}
+                        />
+                      </button>
+                      
+                      <AnimatePresence>
+                        {isCategoryOpen && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-10" 
+                              onClick={() => setIsCategoryOpen(false)}
+                            />
+                            <motion.div
+                              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute top-full left-0 mt-2 w-full sm:w-56 p-2 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 z-20 max-h-60 overflow-y-auto"
+                            >
+                              {settings.categories.map(c => (
+                                <button
+                                  key={c.id}
+                                  onClick={() => {
+                                    setCategoryId(c.id);
+                                    setIsCategoryOpen(false);
+                                  }}
+                                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                                    categoryId === c.id
+                                      ? 'bg-primary-50 dark:bg-primary-900/20'
+                                      : 'hover:bg-slate-50 dark:hover:bg-slate-700'
+                                  }`}
+                                >
+                                  <div 
+                                    className="w-3 h-3 rounded-full flex-shrink-0" 
+                                    style={{ backgroundColor: c.color }}
+                                  />
+                                  <span className={`text-sm flex-1 text-left ${
+                                    categoryId === c.id
+                                      ? 'font-bold text-primary-700 dark:text-primary-300'
+                                      : 'font-medium text-slate-600 dark:text-slate-300'
+                                  }`}>
+                                    {c.name}
+                                  </span>
+                                  {categoryId === c.id && (
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary-500 flex-shrink-0" />
+                                  )}
+                                </button>
+                              ))}
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                     <div className="flex gap-2 flex-1">
                       <input
                         type="text"
