@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "713436990234",
+    "project_id": "study-time-allocation-tool",
+    "storage_bucket": "study-time-allocation-tool.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:713436990234:android:1ca51cf20fa3cbe5fffaa3",
+        "android_client_info": {
+          "package_name": "com.koudai.studytool"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "713436990234-4d53kon3vjgm6m4sm7e93apn5lhb5crr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKVz7cC6MYy5KpRChU0MHVbpmK63ka91I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "713436990234-4d53kon3vjgm6m4sm7e93apn5lhb5crr.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
