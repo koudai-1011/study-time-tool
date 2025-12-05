@@ -101,7 +101,8 @@ export const Dashboard: React.FC = () => {
     todayStudiedHours,
     settings,
     updateSettings,
-    timeRemainingSeconds
+    timeRemainingSeconds,
+    setIsSwipeEnabled
   } = useStudy();
 
   const progress = settings.targetHours > 0
@@ -133,6 +134,14 @@ export const Dashboard: React.FC = () => {
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // 編集モード中はスワイプナビゲーションを無効化
+  useEffect(() => {
+    if (isEditMode) {
+      setIsSwipeEnabled(false);
+      return () => setIsSwipeEnabled(true);
+    }
+  }, [isEditMode, setIsSwipeEnabled]);
 
   const now = currentTime;
   const endDateParsed = settings.endDate ? new Date(settings.endDate) : null;
