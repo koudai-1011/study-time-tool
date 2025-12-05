@@ -19,7 +19,7 @@ interface StudyContextType {
   updateReviewItem: (id: string, updates: Partial<ReviewItem>) => void;
   deleteReviewItem: (id: string) => void;
   completeReview: (id: string, reviewIndex: number) => void;
-  addSuggestion: (content: string, categoryId: number) => void;
+  addSuggestion: (content: string, categoryId: number, useRange?: boolean, unit?: string) => void;
   deleteSuggestion: (id: string) => void;
   totalStudiedHours: number;
   remainingHours: number;
@@ -96,11 +96,13 @@ export const StudyProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, []);
 
   // サジェスト追加
-  const addSuggestion = useCallback((content: string, categoryId: number) => {
+  const addSuggestion = useCallback((content: string, categoryId: number, useRange: boolean = false, unit: string = '') => {
     const newSuggestion: ReviewSuggestion = {
       id: crypto.randomUUID(),
       content,
       categoryId,
+      useRange,
+      unit,
     };
     setSuggestions(prev => [...prev, newSuggestion]);
   }, []);

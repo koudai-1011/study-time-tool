@@ -73,4 +73,6 @@ export interface ReviewSuggestion {
   id: string;
   content: string;
   categoryId: number;
+  useRange?: boolean; // 範囲入力を使用するか
+  unit?: string;      // 単位（例: "p.", "No.", "ページ"）
 }

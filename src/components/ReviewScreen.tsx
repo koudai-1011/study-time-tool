@@ -13,6 +13,14 @@ export const ReviewScreen: React.FC = () => {
   const [showCalendar, setShowCalendar] = useState(false);
   const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
   
+  // 範囲入力モーダルの状態
+  const [rangeModal, setRangeModal] = useState<{
+    isOpen: boolean;
+    suggestion: { content: string; categoryId: number; unit?: string } | null;
+  }>({ isOpen: false, suggestion: null });
+  const [rangeStart, setRangeStart] = useState('');
+  const [rangeEnd, setRangeEnd] = useState('');
+
   // 一括追加用の一時リスト
   const [pendingItems, setPendingItems] = useState<Array<{ content: string; categoryId: number }>>([]);
   
@@ -40,8 +48,33 @@ export const ReviewScreen: React.FC = () => {
     setPendingItems(pendingItems.filter((_, i) => i !== index));
   };
 
-  const handleSuggestionClick = (content: string, categoryId: number) => {
-    setPendingItems([...pendingItems, { content, categoryId }]);
+  const handleSuggestionClick = (suggestion: { content: string; categoryId: number; useRange?: boolean; unit?: string }) => {
+    if (suggestion.useRange) {
+      setRangeModal({
+        isOpen: true,
+        suggestion: { content: suggestion.content, categoryId: suggestion.categoryId, unit: suggestion.unit }
+      });
+      setRangeStart('');
+      setRangeEnd('');
+    } else {
+      setPendingItems([...pendingItems, { content: suggestion.content, categoryId: suggestion.categoryId }]);
+    }
+  };
+
+  const handleRangeSubmit = () => {
+    if (rangeModal.suggestion && rangeStart && rangeEnd) {
+      const unitStr = rangeModal.suggestion.unit ? `${rangeModal.suggestion.unit}` : '';
+      const content = `${rangeModal.suggestion.content} ${rangeStart}〜${rangeEnd}${unitStr}`;
+      
+      setPendingItems([...pendingItems, { 
+        content, 
+        categoryId: rangeModal.suggestion.categoryId 
+      }]);
+      
+      setRangeModal({ isOpen: false, suggestion: null });
+      setRangeStart('');
+      setRangeEnd('');
+    }
   };
 
   const toggleCategory = (categoryId: number) => {
@@ -170,14 +203,19 @@ export const ReviewScreen: React.FC = () => {
                   return (
                     <button
                       key={suggestion.id}
-                      onClick={() => handleSuggestionClick(suggestion.content, suggestion.categoryId)}
-                      className="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-full text-xs text-slate-700 dark:text-slate-300 transition-colors"
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs transition-colors border ${
+                        suggestion.useRange 
+                          ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-300' 
+                          : 'bg-slate-100 dark:bg-slate-700 border-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                      }`}
                     >
                       <div 
                         className="w-2 h-2 rounded-full" 
                         style={{ backgroundColor: category?.color }}
                       />
                       {suggestion.content}
+                      {suggestion.useRange && <span className="text-[10px] opacity-70 ml-0.5">範囲入力</span>}
                     </button>
                   );
                 })}
@@ -241,6 +279,67 @@ export const ReviewScreen: React.FC = () => {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* 範囲入力モーダル */}
+      <AnimatePresence>
+        {rangeModal.isOpen && rangeModal.suggestion && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden p-6"
+            >
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
+                範囲を入力
+              </h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+                {rangeModal.suggestion.content} の範囲を指定してください
+              </p>
+              
+              <div className="flex items-center gap-2 mb-6">
+                <input
+                  type="number" // 数字入力用
+                  value={rangeStart}
+                  onChange={(e) => setRangeStart(e.target.value)}
+                  placeholder="開始"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-center"
+                  autoFocus
+                />
+                <span className="text-slate-400">〜</span>
+                <input
+                  type="number" // 数字入力用
+                  value={rangeEnd}
+                  onChange={(e) => setRangeEnd(e.target.value)}
+                  placeholder="終了"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-center"
+                />
+                {rangeModal.suggestion.unit && (
+                  <span className="text-slate-500 dark:text-slate-400 text-sm whitespace-nowrap">
+                    {rangeModal.suggestion.unit}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setRangeModal({ isOpen: false, suggestion: null })}
+                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg font-medium"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleRangeSubmit}
+                  disabled={!rangeStart || !rangeEnd}
+                  className="flex-1 py-2 bg-primary-600 text-white rounded-lg font-bold disabled:opacity-50"
+                >
+                  追加
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* 今日の復習 */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
