@@ -166,8 +166,6 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   );
 
   if (fullscreen) {
-    // Smooth animations: avoid remounting the time element each second (no key by elapsed)
-    // and trigger a lightweight transform animation on change to reduce layout thrash.
     return (
       <ErrorBoundary onClose={onClose}>
         <motion.div
@@ -180,32 +178,44 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
           onTouchStart={(e) => e.stopPropagation()}
           onTouchMove={(e) => e.preventDefault()}
         >
+          {/* Top Bar */}
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary-400 to-primary-600" />
+
+          {/* Close Button */}
           <button
             onClick={handleCloseClick}
-            className="absolute top-4 right-4 p-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 shadow-lg transition-all"
+            className="absolute top-4 right-4 p-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 shadow-lg transition-all z-50"
           >
             <X size={24} className="text-slate-600 dark:text-slate-300" />
           </button>
 
-          <div className="text-center w-full">
+          <div className="text-center w-full max-w-lg mx-auto relative z-10">
+            {/* Mode indicator */}
             <div className="mb-6">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">選択中: {settings.categories.find(c => c.id === selectedCategory)?.name ?? '未選択'}</p>
-              <div>
-                <CategorySelector compact />
-              </div>
+              <span className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-lg shadow-sm bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400">
+                ⏱️ ストップウォッチ
+              </span>
             </div>
 
+            {/* Category Selector */}
+            <div className="mb-8 w-full">
+              <p className="text-center text-sm text-slate-600 dark:text-slate-400 mb-4">
+                選択中: {settings.categories.find(c => c.id === selectedCategory)?.name ?? '未選択'}
+              </p>
+              <CategorySelector compact />
+            </div>
 
-            
-            <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[12rem] font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wider mb-8 md:mb-12 tabular-nums" style={{ willChange: 'transform, opacity' }}>
+            {/* Time Display */}
+            <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wider mb-8 md:mb-12 tabular-nums" style={{ willChange: 'transform, opacity' }}>
               <span className="tabular-nums inline-block">{formatTime(elapsed)}</span>
             </div>
 
+            {/* Control buttons */}
             <div className="flex items-center gap-4 md:gap-6 justify-center">
               {!isRunning ? (
                 <button
                   onClick={handleStart}
-                  className="bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-primary-600/30 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 text-lg md:text-xl"
+                  className="flex-1 max-w-[200px] bg-primary-600 hover:bg-primary-700 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-primary-600/20 transition-all active:scale-95 flex items-center justify-center gap-3 text-lg md:text-xl"
                 >
                   <Play fill="currentColor" size={24} className="md:w-8 md:h-8" />
                   開始
@@ -213,7 +223,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
               ) : (
                 <button
                   onClick={stop}
-                  className="bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-amber-500/30 transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 text-lg md:text-xl"
+                  className="flex-1 max-w-[200px] bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-8 md:py-6 md:px-12 rounded-2xl md:rounded-3xl shadow-2xl shadow-amber-500/20 transition-all active:scale-95 flex items-center justify-center gap-3 text-lg md:text-xl"
                 >
                   <Pause fill="currentColor" size={24} className="md:w-8 md:h-8" />
                   一時停止
@@ -223,7 +233,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
               <button
                 onClick={handleStop}
                 disabled={elapsed === 0}
-                className="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 md:p-6 rounded-2xl md:rounded-3xl transition-all active:scale-95"
+                className="bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border-2 border-slate-200 dark:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed font-bold p-4 md:p-6 rounded-2xl md:rounded-3xl transition-all active:scale-95 shadow-sm"
                 title="終了して保存"
               >
                 <Square fill="currentColor" size={24} className="md:w-8 md:h-8" />
@@ -231,7 +241,7 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
             </div>
 
             {isRunning && (
-              <p className="mt-6 md:mt-8 text-lg md:text-2xl text-primary-600 dark:text-primary-400 font-medium">
+              <p className="mt-8 text-lg md:text-xl text-primary-600 dark:text-primary-400 font-bold animate-pulse">
                 集中モード中...
               </p>
             )}
@@ -239,8 +249,8 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
 
           {/* Confirmation Modal */}
           {showConfirmModal && (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-3xl p-8 max-w-md w-full shadow-2xl">
                 <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 text-center">
                   保存しますか？
                 </h3>
