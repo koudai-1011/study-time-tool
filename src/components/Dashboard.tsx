@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
-import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, Move } from 'lucide-react';
+import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, GripVertical } from 'lucide-react';
 import type { DashboardWidget, DashboardWidgetType } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { CategoryChart } from './CategoryChart';
@@ -16,6 +16,7 @@ import { StudyTimeDetailModal } from './StudyTimeDetailModal';
 // グリッド設定
 const GRID_COLS = 4;
 const GRID_ROWS = 8;
+const CELL_SIZE = 70; // px
 
 // ウィジェット名のマッピング
 const WIDGET_NAMES: Record<DashboardWidgetType, string> = {
@@ -68,9 +69,15 @@ export const Dashboard: React.FC = () => {
   const [selectedWidget, setSelectedWidget] = useState<DashboardWidgetType | null>(null);
   const [editWidth, setEditWidth] = useState(2);
   const [editHeight, setEditHeight] = useState(1);
-  const [isEditing, setIsEditing] = useState(false); // 既存ウィジェットを編集中
-  const [movingWidget, setMovingWidget] = useState<DashboardWidgetType | null>(null); // 移動中のウィジェット
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // ドラッグ&ドロップ状態
+  const [draggingWidget, setDraggingWidget] = useState<DashboardWidgetType | null>(null);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
+  const [dropTarget, setDropTarget] = useState<{ x: number; y: number } | null>(null);
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -121,17 +128,17 @@ export const Dashboard: React.FC = () => {
         };
       }
       return defaultWidget;
-    }).sort((a, b) => a.order - b.order)
+    }).sort((a, b) => (a.gridY ?? 0) * GRID_COLS + (a.gridX ?? 0) - ((b.gridY ?? 0) * GRID_COLS + (b.gridX ?? 0)))
   };
 
   const visibleWidgets = layout.widgets.filter(w => w.visible);
   const usedWidgetIds = visibleWidgets.map(w => w.id);
 
   // グリッドマップを生成
-  const getGridMap = useCallback(() => {
+  const getGridMap = useCallback((excludeId?: DashboardWidgetType) => {
     const map: (DashboardWidgetType | null)[][] = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null));
     visibleWidgets.forEach(widget => {
-      if (widget.id === movingWidget) return; // 移動中のウィジェットは除外
+      if (widget.id === excludeId) return;
       const x = widget.gridX ?? 0;
       const y = widget.gridY ?? 0;
       const w = widget.width ?? 2;
@@ -145,18 +152,18 @@ export const Dashboard: React.FC = () => {
       }
     });
     return map;
-  }, [visibleWidgets, movingWidget]);
+  }, [visibleWidgets]);
 
   // セルの空き状況を確認
   const canPlaceWidget = useCallback((startX: number, startY: number, width: number, height: number, excludeId?: DashboardWidgetType) => {
-    const map = getGridMap();
+    const map = getGridMap(excludeId);
     for (let dy = 0; dy < height; dy++) {
       for (let dx = 0; dx < width; dx++) {
         const y = startY + dy;
         const x = startX + dx;
-        if (y >= GRID_ROWS || x >= GRID_COLS) return false;
+        if (y >= GRID_ROWS || x >= GRID_COLS || x < 0 || y < 0) return false;
         if (x + width > GRID_COLS) return false;
-        if (map[y][x] !== null && map[y][x] !== excludeId) return false;
+        if (map[y][x] !== null) return false;
       }
     }
     return true;
@@ -178,7 +185,8 @@ export const Dashboard: React.FC = () => {
     
     setSelectedWidget(null);
     setIsEditing(false);
-    setMovingWidget(null);
+    setDraggingWidget(null);
+    setDropTarget(null);
   };
 
   // ウィジェット削除
@@ -196,39 +204,91 @@ export const Dashboard: React.FC = () => {
 
   // グリッドセルをタップして配置
   const handleGridCellClick = (x: number, y: number) => {
+    if (draggingWidget) return;
     if (!selectedWidget) return;
-    if (!canPlaceWidget(x, y, editWidth, editHeight, movingWidget ?? undefined)) return;
+    if (!canPlaceWidget(x, y, editWidth, editHeight)) return;
     
     placeWidget(selectedWidget, x, y, editWidth, editHeight);
   };
 
   // ウィジェットをタップして整形ゾーンへ
   const handleWidgetTap = (widget: DashboardWidget) => {
+    if (draggingWidget) return;
     setSelectedWidget(widget.id);
     setEditWidth(widget.width ?? 2);
     setEditHeight(widget.height ?? 1);
     setIsEditing(true);
   };
 
-  // ウィジェットを長押しで移動モード開始
-  const handleWidgetLongPressStart = (widget: DashboardWidget) => {
-    longPressRef.current = setTimeout(() => {
-      setMovingWidget(widget.id);
-      setSelectedWidget(widget.id);
-      setEditWidth(widget.width ?? 2);
-      setEditHeight(widget.height ?? 1);
-      setIsEditing(true);
-    }, 500);
+  // ドラッグ開始（長押し）
+  const handleDragStart = (widget: DashboardWidget, clientX: number, clientY: number) => {
+    if (!gridRef.current) return;
+    const rect = gridRef.current.getBoundingClientRect();
+    setDraggingWidget(widget.id);
+    setDragOffset({
+      x: clientX - rect.left - (widget.gridX ?? 0) * (CELL_SIZE + 4),
+      y: clientY - rect.top - (widget.gridY ?? 0) * (CELL_SIZE + 4),
+    });
+    setDragPosition({ x: clientX, y: clientY });
+    setEditWidth(widget.width ?? 2);
+    setEditHeight(widget.height ?? 1);
   };
 
-  const handleWidgetLongPressEnd = () => {
+  // ドラッグ中
+  const handleDragMove = (clientX: number, clientY: number) => {
+    if (!draggingWidget || !gridRef.current) return;
+    setDragPosition({ x: clientX, y: clientY });
+    
+    const rect = gridRef.current.getBoundingClientRect();
+    const gridX = Math.floor((clientX - rect.left - dragOffset.x + CELL_SIZE / 2) / (CELL_SIZE + 4));
+    const gridY = Math.floor((clientY - rect.top - dragOffset.y + CELL_SIZE / 2) / (CELL_SIZE + 4));
+    
+    if (gridX >= 0 && gridX < GRID_COLS && gridY >= 0 && gridY < GRID_ROWS) {
+      if (canPlaceWidget(gridX, gridY, editWidth, editHeight, draggingWidget)) {
+        setDropTarget({ x: gridX, y: gridY });
+      } else {
+        setDropTarget(null);
+      }
+    } else {
+      setDropTarget(null);
+    }
+  };
+
+  // ドラッグ終了
+  const handleDragEnd = () => {
+    if (draggingWidget && dropTarget) {
+      placeWidget(draggingWidget, dropTarget.x, dropTarget.y, editWidth, editHeight);
+    }
+    setDraggingWidget(null);
+    setDropTarget(null);
+  };
+
+  // 長押し開始
+  const handleLongPressStart = (widget: DashboardWidget, e: React.TouchEvent | React.MouseEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    longPressRef.current = setTimeout(() => {
+      handleDragStart(widget, clientX, clientY);
+    }, 300);
+  };
+
+  const handleLongPressEnd = () => {
     if (longPressRef.current) {
       clearTimeout(longPressRef.current);
       longPressRef.current = null;
     }
   };
 
-  // ウィジェットをレンダリング（サイズに関係なく表示）
+  // タッチ/マウスムーブ
+  const handlePointerMove = (e: React.TouchEvent | React.MouseEvent) => {
+    if (!draggingWidget) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    handleDragMove(clientX, clientY);
+  };
+
+  // ウィジェットをレンダリング
   const renderWidgetContent = (widget: DashboardWidget) => {
     const w = widget.width ?? 2;
     
@@ -348,10 +408,16 @@ export const Dashboard: React.FC = () => {
 
   // 編集モードUI
   if (isEditMode) {
-    const gridMap = getGridMap();
+    const gridMap = getGridMap(draggingWidget ?? undefined);
     
     return (
-      <div className="fixed inset-0 z-40 bg-slate-50 dark:bg-slate-900 flex flex-col">
+      <div 
+        className="fixed inset-0 z-40 bg-slate-50 dark:bg-slate-900 flex flex-col"
+        onTouchMove={handlePointerMove}
+        onTouchEnd={() => { handleDragEnd(); handleLongPressEnd(); }}
+        onMouseMove={handlePointerMove}
+        onMouseUp={() => { handleDragEnd(); handleLongPressEnd(); }}
+      >
         {/* ヘッダー */}
         <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">レイアウト編集</h2>
@@ -360,7 +426,7 @@ export const Dashboard: React.FC = () => {
               setIsEditMode(false);
               setSelectedWidget(null);
               setIsEditing(false);
-              setMovingWidget(null);
+              setDraggingWidget(null);
             }}
             className="p-2 rounded-xl bg-primary-600 text-white"
           >
@@ -370,91 +436,115 @@ export const Dashboard: React.FC = () => {
 
         {/* グリッドエリア */}
         <div className="flex-1 overflow-auto p-4">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-2 text-center">
+            タップで編集 / 長押しでドラッグ移動
+          </p>
           <div 
-            className="grid gap-1 p-2 bg-white dark:bg-slate-800 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600"
-            style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }}
+            ref={gridRef}
+            className="relative bg-white dark:bg-slate-800 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 p-1"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${GRID_COLS}, ${CELL_SIZE}px)`,
+              gridTemplateRows: `repeat(${GRID_ROWS}, ${CELL_SIZE}px)`,
+              gap: '4px',
+            }}
           >
+            {/* グリッドセル（背景） */}
             {Array(GRID_ROWS * GRID_COLS).fill(null).map((_, index) => {
               const x = index % GRID_COLS;
               const y = Math.floor(index / GRID_COLS);
               const widgetId = gridMap[y]?.[x];
-              const widget = widgetId ? visibleWidgets.find(w => w.id === widgetId) : null;
+              const isOccupied = widgetId !== null;
+              const isDropHere = dropTarget && dropTarget.x === x && dropTarget.y === y;
+              const canDropHere = selectedWidget && !draggingWidget && canPlaceWidget(x, y, editWidth, editHeight);
               
-              const isWidgetStart = widget && widget.gridX === x && widget.gridY === y;
-              const isWidgetPart = widget && !isWidgetStart;
-              const canPlace = selectedWidget && canPlaceWidget(x, y, editWidth, editHeight, movingWidget ?? undefined);
-              
-              if (isWidgetPart) {
-                return null;
-              }
-              
-              if (isWidgetStart && widget) {
-                const w = widget.width ?? 2;
-                const h = widget.height ?? 1;
-                const isSelected = selectedWidget === widget.id;
-                
-                return (
-                  <div
-                    key={`widget-${widget.id}`}
-                    className={`relative rounded-lg transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-primary-100 dark:bg-primary-900/30 border-2 border-primary-500'
-                        : 'bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-300 dark:border-primary-700'
-                    }`}
-                    style={{
-                      gridColumn: `span ${w}`,
-                      gridRow: `span ${h}`,
-                      minHeight: `${h * 50}px`,
-                    }}
-                    onClick={() => handleWidgetTap(widget)}
-                    onTouchStart={() => handleWidgetLongPressStart(widget)}
-                    onTouchEnd={handleWidgetLongPressEnd}
-                    onMouseDown={() => handleWidgetLongPressStart(widget)}
-                    onMouseUp={handleWidgetLongPressEnd}
-                    onMouseLeave={handleWidgetLongPressEnd}
-                  >
-                    <div className="absolute top-1 left-1">
-                      <Move size={12} className="text-primary-400" />
-                    </div>
-                    <div className="flex items-center justify-center h-full">
-                      <span className="text-xs font-medium text-primary-700 dark:text-primary-300">
-                        {WIDGET_NAMES[widget.id]} ({w}×{h})
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
-              
-              // 空きセル
               return (
                 <div
                   key={`cell-${x}-${y}`}
-                  onClick={() => canPlace && handleGridCellClick(x, y)}
-                  className={`aspect-square border-2 rounded transition-colors flex items-center justify-center text-[10px] ${
-                    canPlace
-                      ? 'border-primary-400 bg-primary-100 dark:bg-primary-900/30 cursor-pointer hover:bg-primary-200'
-                      : 'border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'
+                  onClick={() => !isOccupied && handleGridCellClick(x, y)}
+                  className={`border-2 rounded transition-colors ${
+                    isDropHere
+                      ? 'border-primary-500 bg-primary-200 dark:bg-primary-800'
+                      : isOccupied
+                        ? 'border-transparent bg-transparent'
+                        : canDropHere
+                          ? 'border-primary-300 bg-primary-50 dark:bg-primary-900/20 cursor-pointer'
+                          : 'border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'
                   }`}
+                  style={{
+                    gridColumn: `${x + 1} / ${x + 2}`,
+                    gridRow: `${y + 1} / ${y + 2}`,
+                  }}
+                />
+              );
+            })}
+
+            {/* ウィジェット（絶対位置） */}
+            {visibleWidgets.map((widget) => {
+              const isDragging = widget.id === draggingWidget;
+              const isSelected = widget.id === selectedWidget;
+              const gx = widget.gridX ?? 0;
+              const gy = widget.gridY ?? 0;
+              const w = widget.width ?? 2;
+              const h = widget.height ?? 1;
+              
+              if (isDragging) return null; // ドラッグ中は別でレンダリング
+              
+              return (
+                <div
+                  key={`widget-${widget.id}`}
+                  className={`rounded-lg transition-all cursor-pointer ${
+                    isSelected
+                      ? 'ring-2 ring-primary-500 ring-offset-2'
+                      : ''
+                  }`}
+                  style={{
+                    gridColumn: `${gx + 1} / ${gx + w + 1}`,
+                    gridRow: `${gy + 1} / ${gy + h + 1}`,
+                  }}
+                  onClick={() => handleWidgetTap(widget)}
+                  onTouchStart={(e) => handleLongPressStart(widget, e)}
+                  onTouchEnd={handleLongPressEnd}
+                  onMouseDown={(e) => handleLongPressStart(widget, e)}
+                  onMouseUp={handleLongPressEnd}
+                  onMouseLeave={handleLongPressEnd}
                 >
-                  {canPlace && <Plus size={14} className="text-primary-500" />}
+                  <div className="relative w-full h-full">
+                    {renderWidgetContent(widget)}
+                    <div className="absolute top-1 left-1 p-1 bg-black/30 rounded">
+                      <GripVertical size={12} className="text-white" />
+                    </div>
+                  </div>
                 </div>
               );
             })}
+
+            {/* ドラッグ中のウィジェット（フローティング） */}
+            {draggingWidget && gridRef.current && (
+              <div
+                className="fixed pointer-events-none z-50 opacity-80 scale-105"
+                style={{
+                  left: dragPosition.x - dragOffset.x,
+                  top: dragPosition.y - dragOffset.y,
+                  width: `${editWidth * (CELL_SIZE + 4) - 4}px`,
+                  height: `${editHeight * (CELL_SIZE + 4) - 4}px`,
+                }}
+              >
+                {(() => {
+                  const w = visibleWidgets.find(w => w.id === draggingWidget);
+                  return w ? renderWidgetContent(w) : null;
+                })()}
+              </div>
+            )}
           </div>
-          
-          {movingWidget && (
-            <p className="text-center text-xs text-primary-600 dark:text-primary-400 mt-2">
-              移動モード: 空きセルをタップして再配置
-            </p>
-          )}
         </div>
 
         {/* 整形ゾーン */}
-        {selectedWidget && (
+        {selectedWidget && !draggingWidget && (
           <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                {WIDGET_NAMES[selectedWidget]} の整形
+                {WIDGET_NAMES[selectedWidget]} の編集
               </span>
               <div className="flex gap-2">
                 {isEditing && (
@@ -466,72 +556,45 @@ export const Dashboard: React.FC = () => {
                   </button>
                 )}
                 <button
-                  onClick={() => {
-                    setSelectedWidget(null);
-                    setIsEditing(false);
-                    setMovingWidget(null);
-                  }}
+                  onClick={() => { setSelectedWidget(null); setIsEditing(false); }}
                   className="text-xs text-slate-500"
                 >
-                  キャンセル
+                  閉じる
                 </button>
               </div>
             </div>
             
-            {/* 幅スライダー */}
+            {/* 幅 */}
             <div className="flex items-center gap-3 mb-2">
               <span className="text-xs text-slate-500 w-8">幅</span>
-              <button onClick={() => setEditWidth(Math.max(1, editWidth - 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700">
-                <Minus size={14} />
-              </button>
+              <button onClick={() => setEditWidth(Math.max(1, editWidth - 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700"><Minus size={14} /></button>
               <div className="flex-1 flex gap-1">
-                {[1, 2, 3, 4].map(n => (
-                  <div 
-                    key={n}
-                    onClick={() => setEditWidth(n)}
-                    className={`flex-1 h-6 rounded cursor-pointer transition-colors ${
-                      n <= editWidth ? 'bg-primary-500' : 'bg-slate-200 dark:bg-slate-600'
-                    }`}
-                  />
+                {[1,2,3,4].map(n => (
+                  <div key={n} onClick={() => setEditWidth(n)} className={`flex-1 h-6 rounded cursor-pointer ${n <= editWidth ? 'bg-primary-500' : 'bg-slate-200 dark:bg-slate-600'}`} />
                 ))}
               </div>
-              <button onClick={() => setEditWidth(Math.min(4, editWidth + 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700">
-                <Plus size={14} />
-              </button>
-              <span className="text-xs font-medium w-8 text-right">{editWidth}</span>
+              <button onClick={() => setEditWidth(Math.min(4, editWidth + 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700"><Plus size={14} /></button>
+              <span className="text-xs w-6 text-right">{editWidth}</span>
             </div>
             
-            {/* 高さスライダー */}
+            {/* 高さ */}
             <div className="flex items-center gap-3">
               <span className="text-xs text-slate-500 w-8">高さ</span>
-              <button onClick={() => setEditHeight(Math.max(1, editHeight - 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700">
-                <Minus size={14} />
-              </button>
+              <button onClick={() => setEditHeight(Math.max(1, editHeight - 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700"><Minus size={14} /></button>
               <div className="flex-1 flex gap-1">
-                {[1, 2, 3, 4].map(n => (
-                  <div 
-                    key={n}
-                    onClick={() => setEditHeight(n)}
-                    className={`flex-1 h-6 rounded cursor-pointer transition-colors ${
-                      n <= editHeight ? 'bg-primary-500' : 'bg-slate-200 dark:bg-slate-600'
-                    }`}
-                  />
+                {[1,2,3,4].map(n => (
+                  <div key={n} onClick={() => setEditHeight(n)} className={`flex-1 h-6 rounded cursor-pointer ${n <= editHeight ? 'bg-primary-500' : 'bg-slate-200 dark:bg-slate-600'}`} />
                 ))}
               </div>
-              <button onClick={() => setEditHeight(Math.min(4, editHeight + 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700">
-                <Plus size={14} />
-              </button>
-              <span className="text-xs font-medium w-8 text-right">{editHeight}</span>
+              <button onClick={() => setEditHeight(Math.min(4, editHeight + 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700"><Plus size={14} /></button>
+              <span className="text-xs w-6 text-right">{editHeight}</span>
             </div>
             
-            {/* 適用ボタン（編集中の場合） */}
-            {isEditing && !movingWidget && (
+            {isEditing && (
               <button
                 onClick={() => {
                   const widget = visibleWidgets.find(w => w.id === selectedWidget);
-                  if (widget) {
-                    placeWidget(selectedWidget, widget.gridX ?? 0, widget.gridY ?? 0, editWidth, editHeight);
-                  }
+                  if (widget) placeWidget(selectedWidget, widget.gridX ?? 0, widget.gridY ?? 0, editWidth, editHeight);
                 }}
                 className="w-full mt-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium"
               >
@@ -543,13 +606,10 @@ export const Dashboard: React.FC = () => {
 
         {/* ウィジェットパレット */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 safe-area-pb">
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-2 text-center">
-            配置済み→タップで整形 / 長押しで移動 | 未配置→タップで選択
-          </p>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {allWidgetIds.map((id) => {
               const isUsed = usedWidgetIds.includes(id);
-              const isSelected = selectedWidget === id;
+              const isSelected = selectedWidget === id && !isEditing;
               return (
                 <button
                   key={id}
@@ -559,20 +619,17 @@ export const Dashboard: React.FC = () => {
                       setEditWidth(2);
                       setEditHeight(1);
                       setIsEditing(false);
-                      setMovingWidget(null);
                     }
                   }}
                   disabled={isUsed}
                   className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
-                    isUsed 
-                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed' 
-                      : isSelected
-                        ? 'bg-primary-600 text-white scale-105'
-                        : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-primary-50'
+                    isUsed ? 'bg-slate-200 dark:bg-slate-700 text-slate-400' 
+                      : isSelected ? 'bg-primary-600 text-white scale-105'
+                        : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                   }`}
                 >
                   {WIDGET_ICONS[id]}
-                  <span className="text-[10px] font-medium whitespace-nowrap">{WIDGET_NAMES[id]}</span>
+                  <span className="text-[10px] font-medium">{WIDGET_NAMES[id]}</span>
                 </button>
               );
             })}
@@ -582,7 +639,9 @@ export const Dashboard: React.FC = () => {
     );
   }
 
-  // 通常モードUI
+  // 通常モードUI - グリッド位置を厳密に守る
+  const maxY = Math.max(...visibleWidgets.map(w => (w.gridY ?? 0) + (w.height ?? 1)));
+  
   return (
     <div className="space-y-4 pb-24 md:pb-6">
       <header className="flex justify-between items-center mb-4">
@@ -601,21 +660,28 @@ export const Dashboard: React.FC = () => {
         </button>
       </header>
 
-      {/* ウィジェットグリッド */}
+      {/* ウィジェットグリッド - 絶対位置 */}
       <div 
-        className="grid gap-3"
-        style={{ gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)` }}
+        className="relative"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
+          gridTemplateRows: `repeat(${maxY}, 60px)`,
+          gap: '12px',
+        }}
       >
         {visibleWidgets.map((widget) => {
+          const gx = widget.gridX ?? 0;
+          const gy = widget.gridY ?? 0;
           const w = widget.width ?? 2;
           const h = widget.height ?? 1;
+          
           return (
             <div 
               key={widget.id}
               style={{
-                gridColumn: `span ${w}`,
-                gridRow: `span ${h}`,
-                minHeight: `${h * 60}px`,
+                gridColumn: `${gx + 1} / ${gx + w + 1}`,
+                gridRow: `${gy + 1} / ${gy + h + 1}`,
               }}
             >
               {renderWidgetContent(widget)}
@@ -626,24 +692,11 @@ export const Dashboard: React.FC = () => {
 
       {/* Modals */}
       <AnimatePresence>
-        {fullscreenTimer && (
-          <Timer fullscreen onClose={() => setFullscreenTimer(false)} />
-        )}
-        {showPomodoroTimer && (
-          <PomodoroTimer onClose={() => setShowPomodoroTimer(false)} />
-        )}
-        {showSabotageModal && (
-          <SabotageModal 
-            dailyGoalHours={realtimeDailyGoal} 
-            onClose={() => setShowSabotageModal(false)} 
-          />
-        )}
-        {showProgressModal && (
-          <ProgressDetailModal onClose={() => setShowProgressModal(false)} />
-        )}
-        {showStudyTimeModal && (
-          <StudyTimeDetailModal onClose={() => setShowStudyTimeModal(false)} />
-        )}
+        {fullscreenTimer && <Timer fullscreen onClose={() => setFullscreenTimer(false)} />}
+        {showPomodoroTimer && <PomodoroTimer onClose={() => setShowPomodoroTimer(false)} />}
+        {showSabotageModal && <SabotageModal dailyGoalHours={realtimeDailyGoal} onClose={() => setShowSabotageModal(false)} />}
+        {showProgressModal && <ProgressDetailModal onClose={() => setShowProgressModal(false)} />}
+        {showStudyTimeModal && <StudyTimeDetailModal onClose={() => setShowStudyTimeModal(false)} />}
       </AnimatePresence>
     </div>
   );
