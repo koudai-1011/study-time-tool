@@ -44,10 +44,13 @@ export interface Settings {
 
 export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart' | 'today_review';
 
+export type DashboardWidgetSize = 'small' | 'medium' | 'large' | 'full';
+
 export interface DashboardWidget {
   id: DashboardWidgetType;
   visible: boolean;
   order: number;
+  size: DashboardWidgetSize; // small=1列, medium=1列(高さ大), large=2列, full=全幅
 }
 
 export interface DashboardLayout {

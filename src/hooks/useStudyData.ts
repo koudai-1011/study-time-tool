@@ -28,13 +28,14 @@ export const useStudyData = (user: User | null) => {
     showDailyGoalLine: true,
     dashboardLayout: {
       widgets: [
-        { id: 'start_timer', visible: true, order: 0 },
-        { id: 'progress', visible: true, order: 1 },
-        { id: 'daily_goal', visible: true, order: 2 },
-        { id: 'today_study', visible: true, order: 3 },
-        { id: 'total_study', visible: true, order: 4 },
-        { id: 'remaining_time', visible: true, order: 5 },
-        { id: 'category_chart', visible: true, order: 6 },
+        { id: 'start_timer', visible: true, order: 0, size: 'full' },
+        { id: 'pomodoro_timer', visible: true, order: 1, size: 'full' },
+        { id: 'progress', visible: true, order: 2, size: 'large' },
+        { id: 'daily_goal', visible: true, order: 3, size: 'small' },
+        { id: 'today_study', visible: true, order: 4, size: 'small' },
+        { id: 'total_study', visible: true, order: 5, size: 'small' },
+        { id: 'remaining_time', visible: true, order: 6, size: 'small' },
+        { id: 'category_chart', visible: true, order: 7, size: 'large' },
       ]
     }
   });
@@ -42,33 +43,37 @@ export const useStudyData = (user: User | null) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const isLoadingRef = useRef(true);
 
-  // Migration function to ensure start_timer widget exists
+  // Migration function to ensure start_timer widget exists and has size
   const migrateSettings = (loadedSettings: Settings): Settings => {
     if (!loadedSettings.dashboardLayout) {
       return loadedSettings;
     }
 
-    const hasStartTimer = loadedSettings.dashboardLayout.widgets.some(w => w.id === 'start_timer');
+    let widgets = loadedSettings.dashboardLayout.widgets;
+    const hasStartTimer = widgets.some(w => w.id === 'start_timer');
     
     if (!hasStartTimer) {
       // Add start_timer as the first widget
-      const updatedWidgets = [
-        { id: 'start_timer' as const, visible: true, order: 0 },
-        ...loadedSettings.dashboardLayout.widgets.map(w => ({
+      widgets = [
+        { id: 'start_timer' as const, visible: true, order: 0, size: 'full' as const },
+        ...widgets.map(w => ({
           ...w,
           order: w.order + 1
         }))
       ];
-      
-      return {
-        ...loadedSettings,
-        dashboardLayout: {
-          widgets: updatedWidgets
-        }
-      };
     }
+
+    // Ensure all widgets have size property
+    widgets = widgets.map(w => ({
+      ...w,
+      size: w.size || (w.id === 'start_timer' || w.id === 'pomodoro_timer' ? 'full' : 
+             w.id === 'progress' || w.id === 'category_chart' || w.id === 'today_review' ? 'large' : 'small')
+    }));
     
-    return loadedSettings;
+    return {
+      ...loadedSettings,
+      dashboardLayout: { widgets }
+    };
   };
 
   // Load initial data
