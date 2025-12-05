@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle, Trash2, Calendar as CalendarIcon, Settings, ChevronDown, ChevronRight, Save, ListPlus, X } from 'lucide-react';
+import { CheckCircle, Trash2, Calendar as CalendarIcon, Settings, ChevronDown, ChevronRight, Save, ListPlus, X, Download } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { getTodayReviews, formatDateYMD, calculateReviewDates, DEFAULT_REVIEW_INTERVALS } from '../utils/reviewSchedule';
 import { ReviewCalendar } from './ReviewCalendar';
@@ -29,6 +29,16 @@ export const ReviewScreen: React.FC = () => {
 
   const intervals = settings.reviewSettings?.intervals || DEFAULT_REVIEW_INTERVALS;
   const todayReviews = getTodayReviews(reviewItems, intervals);
+  const confirmBeforeDelete = settings.confirmBeforeDelete !== false;
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+
+  // 背景スクロール禁止
+  useEffect(() => {
+    if (showCalendar || rangeModal.isOpen || deleteConfirm) {
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = ''; };
+    }
+  }, [showCalendar, rangeModal.isOpen, deleteConfirm]);
 
   const handleAddToPending = () => {
     if (newContent.trim()) {
@@ -89,6 +99,40 @@ export const ReviewScreen: React.FC = () => {
 
   const labels = ['1日目', '3日目', '7日目', '14日目', '30日目', '60日目'];
 
+  // 削除ハンドラー
+  const handleDelete = (id: string, name: string) => {
+    if (confirmBeforeDelete) {
+      setDeleteConfirm({ id, name });
+    } else {
+      deleteReviewItem(id);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      deleteReviewItem(deleteConfirm.id);
+      setDeleteConfirm(null);
+    }
+  };
+
+  // CSVエクスポート
+  const handleExportCSV = () => {
+    const headers = ['カテゴリ', '学習内容', '基準日', '復習進捗', ...(intervals.map(d => `${d}日後`))].join(',');
+    const rows = reviewItems.map(item => {
+      const category = settings.categories.find(c => c.id === item.categoryId)?.name || '不明';
+      const reviewStatus = intervals.map((_, i) => item.completedReviews.includes(i) ? '✓' : '-').join(',');
+      return `"${category}","${item.content}","${item.baseDate}","${item.completedReviews.length}/${intervals.length}",${reviewStatus}`;
+    });
+    const csv = [headers, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `review_export_${formatDateYMD(new Date())}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   // カテゴリごとにアイテムをグループ化
   const groupedItems = settings.categories.reduce((acc, category) => {
     const items = reviewItems.filter(item => item.categoryId === category.id);
@@ -101,29 +145,64 @@ export const ReviewScreen: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* ヘッダー */}
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">復習管理</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
             エビングハウスの忘却曲線に基づく効率的な復習
           </p>
         </div>
-        <motion.button
-          onClick={() => setShowCalendar(!showCalendar)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
-            showCalendar
-              ? 'bg-primary-600 text-white'
-              : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
-          }`}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <CalendarIcon size={20} />
-          カレンダー表示
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <motion.button
+            onClick={handleExportCSV}
+            disabled={reviewItems.length === 0}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 disabled:opacity-50"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Download size={18} />
+            CSV
+          </motion.button>
+          <motion.button
+            onClick={() => setShowCalendar(!showCalendar)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
+              showCalendar
+                ? 'bg-primary-600 text-white'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-600'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <CalendarIcon size={20} />
+            カレンダー
+          </motion.button>
+        </div>
       </header>
 
-      {showCalendar && <ReviewCalendar items={reviewItems} intervals={intervals} />}
+      {/* カレンダーモーダル */}
+      <AnimatePresence>
+        {showCalendar && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setShowCalendar(false)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">復習カレンダー</h3>
+                <button onClick={() => setShowCalendar(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
+                  <X size={20} className="text-slate-500" />
+                </button>
+              </div>
+              <div className="p-4">
+                <ReviewCalendar items={reviewItems} intervals={intervals} />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* 入力欄 */}
       <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
@@ -449,7 +528,7 @@ export const ReviewScreen: React.FC = () => {
                                   </p>
                                 </div>
                                 <button
-                                  onClick={() => deleteReviewItem(item.id)}
+                                  onClick={() => handleDelete(item.id, item.content)}
                                   className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-red-400 hover:text-red-600 transition-colors"
                                 >
                                   <Trash2 size={16} />
@@ -472,6 +551,38 @@ export const ReviewScreen: React.FC = () => {
         isOpen={isSuggestionModalOpen} 
         onClose={() => setIsSuggestionModalOpen(false)} 
       />
+
+      {/* 削除確認モーダル */}
+      <AnimatePresence>
+        {deleteConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setDeleteConfirm(null)}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">削除確認</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">「{deleteConfirm.name}」を削除しますか？</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2 bg-red-500 text-white rounded-xl font-medium"
+                >
+                  削除
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

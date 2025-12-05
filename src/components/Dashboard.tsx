@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
-import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, X } from 'lucide-react';
+import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, X, Skull } from 'lucide-react';
 import type { DashboardWidget, DashboardWidgetType } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { CategoryChart } from './CategoryChart';
@@ -315,7 +315,6 @@ export const Dashboard: React.FC = () => {
   // ウィジェットをレンダリング
   const renderWidgetContent = (widget: DashboardWidget, forModal = false) => {
     const w = widget.width ?? 2;
-    const h = widget.height ?? 1;
     const small = !forModal && isSmallWidget(widget);
     
     // 小サイズ時はタイトルのみ
@@ -359,15 +358,25 @@ export const Dashboard: React.FC = () => {
       case 'progress':
         return (
           <motion.div
-            className="w-full h-full bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-center overflow-hidden"
+            className="w-full h-full bg-white dark:bg-slate-800 rounded-xl p-2 border-2 border-slate-200 dark:border-slate-600 shadow-md flex flex-col justify-center overflow-hidden"
             onClick={() => !isEditMode && setShowProgressModal(true)}
             whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
             <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-medium text-slate-500 truncate">進捗</span>
-              <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-lg' : 'text-sm'}`}>{progress.toFixed(0)}%</span>
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate">進捗</span>
+              <div className="flex items-center gap-2">
+                <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-lg' : 'text-sm'}`}>{progress.toFixed(0)}%</span>
+                {w > 2 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setShowSabotageModal(true); }}
+                    className="p-1 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-200 dark:hover:bg-red-900/50"
+                  >
+                    <Skull size={14} />
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
               <div className="h-full bg-primary-500 rounded-full" style={{ width: `${progress}%` }} />
             </div>
           </motion.div>
@@ -376,53 +385,53 @@ export const Dashboard: React.FC = () => {
       case 'daily_goal':
         return (
           <div 
-            className="w-full h-full bg-blue-50 dark:bg-blue-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer"
+            className="w-full h-full bg-blue-50 dark:bg-blue-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer border-2 border-blue-200 dark:border-blue-800 shadow-md"
             onClick={() => !isEditMode && setShowStudyTimeModal(true)}
           >
             <Calendar className="text-blue-500" size={w > 1 ? 20 : 14} />
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatTimeJapanese(realtimeDailyGoal)}
             </span>
-            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">目標</span>}
+            {w > 1 && <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">目標</span>}
           </div>
         );
 
       case 'today_study':
         return (
           <div 
-            className="w-full h-full bg-green-50 dark:bg-green-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer"
+            className="w-full h-full bg-green-50 dark:bg-green-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer border-2 border-green-200 dark:border-green-800 shadow-md"
             onClick={() => !isEditMode && setShowStudyTimeModal(true)}
           >
             <Clock className="text-green-500" size={w > 1 ? 20 : 14} />
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatTimeJapanese(todayStudiedHours)}
             </span>
-            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">今日</span>}
+            {w > 1 && <span className="text-[10px] font-medium text-green-600 dark:text-green-400">今日</span>}
           </div>
         );
 
       case 'total_study':
         return (
           <div 
-            className="w-full h-full bg-purple-50 dark:bg-purple-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer"
+            className="w-full h-full bg-purple-50 dark:bg-purple-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer border-2 border-purple-200 dark:border-purple-800 shadow-md"
             onClick={() => !isEditMode && setShowStudyTimeModal(true)}
           >
             <TrendingUp className="text-purple-500" size={w > 1 ? 20 : 14} />
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatTimeJapanese(totalStudiedHours)}
             </span>
-            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">総計</span>}
+            {w > 1 && <span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">総計</span>}
           </div>
         );
 
       case 'remaining_time':
         return (
-          <div className="w-full h-full bg-orange-50 dark:bg-orange-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden">
+          <div className="w-full h-full bg-orange-50 dark:bg-orange-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden border-2 border-orange-200 dark:border-orange-800 shadow-md">
             <Clock className="text-orange-500" size={w > 1 ? 20 : 14} />
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatCountdownJapanese(timeRemainingSeconds)}
             </span>
-            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">残り</span>}
+            {w > 1 && <span className="text-[10px] font-medium text-orange-600 dark:text-orange-400">残り</span>}
           </div>
         );
 
