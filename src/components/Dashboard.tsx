@@ -1,12 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
-import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, Trash2 } from 'lucide-react';
+import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, Move } from 'lucide-react';
 import type { DashboardWidget, DashboardWidgetType } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
-import { StatCard } from './StatCard';
 import { CategoryChart } from './CategoryChart';
 import { TodayReviewWidget } from './TodayReviewWidget';
 
@@ -69,7 +68,9 @@ export const Dashboard: React.FC = () => {
   const [selectedWidget, setSelectedWidget] = useState<DashboardWidgetType | null>(null);
   const [editWidth, setEditWidth] = useState(2);
   const [editHeight, setEditHeight] = useState(1);
-
+  const [isEditing, setIsEditing] = useState(false); // 既存ウィジェットを編集中
+  const [movingWidget, setMovingWidget] = useState<DashboardWidgetType | null>(null); // 移動中のウィジェット
+  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -126,10 +127,11 @@ export const Dashboard: React.FC = () => {
   const visibleWidgets = layout.widgets.filter(w => w.visible);
   const usedWidgetIds = visibleWidgets.map(w => w.id);
 
-  // グリッドマップを生成（どのセルがどのウィジェットで埋まっているか）
+  // グリッドマップを生成
   const getGridMap = useCallback(() => {
     const map: (DashboardWidgetType | null)[][] = Array(GRID_ROWS).fill(null).map(() => Array(GRID_COLS).fill(null));
     visibleWidgets.forEach(widget => {
+      if (widget.id === movingWidget) return; // 移動中のウィジェットは除外
       const x = widget.gridX ?? 0;
       const y = widget.gridY ?? 0;
       const w = widget.width ?? 2;
@@ -143,7 +145,7 @@ export const Dashboard: React.FC = () => {
       }
     });
     return map;
-  }, [visibleWidgets]);
+  }, [visibleWidgets, movingWidget]);
 
   // セルの空き状況を確認
   const canPlaceWidget = useCallback((startX: number, startY: number, width: number, height: number, excludeId?: DashboardWidgetType) => {
@@ -153,6 +155,7 @@ export const Dashboard: React.FC = () => {
         const y = startY + dy;
         const x = startX + dx;
         if (y >= GRID_ROWS || x >= GRID_COLS) return false;
+        if (x + width > GRID_COLS) return false;
         if (map[y][x] !== null && map[y][x] !== excludeId) return false;
       }
     }
@@ -161,7 +164,6 @@ export const Dashboard: React.FC = () => {
 
   // ウィジェット配置
   const placeWidget = (widgetId: DashboardWidgetType, x: number, y: number, width: number, height: number) => {
-    const existingWidget = layout.widgets.find(w => w.id === widgetId);
     const updatedWidgets = layout.widgets.map(w => {
       if (w.id === widgetId) {
         return { ...w, visible: true, gridX: x, gridY: y, width, height };
@@ -169,20 +171,14 @@ export const Dashboard: React.FC = () => {
       return w;
     });
     
-    if (!existingWidget) {
-      updatedWidgets.push({
-        id: widgetId,
-        visible: true,
-        order: updatedWidgets.length,
-        size: width > 2 ? 'large' : 'small',
-        width, height, gridX: x, gridY: y,
-      });
-    }
-    
     updateSettings({
       ...settings,
       dashboardLayout: { widgets: updatedWidgets }
     });
+    
+    setSelectedWidget(null);
+    setIsEditing(false);
+    setMovingWidget(null);
   };
 
   // ウィジェット削除
@@ -194,31 +190,58 @@ export const Dashboard: React.FC = () => {
       ...settings,
       dashboardLayout: { widgets: updatedWidgets }
     });
+    setSelectedWidget(null);
+    setIsEditing(false);
   };
 
   // グリッドセルをタップして配置
   const handleGridCellClick = (x: number, y: number) => {
     if (!selectedWidget) return;
-    if (!canPlaceWidget(x, y, editWidth, editHeight)) return;
+    if (!canPlaceWidget(x, y, editWidth, editHeight, movingWidget ?? undefined)) return;
     
     placeWidget(selectedWidget, x, y, editWidth, editHeight);
-    setSelectedWidget(null);
   };
 
-  // ウィジェットをレンダリング
-  const renderWidgetContent = (widget: DashboardWidget, compact = false) => {
-    const baseClass = compact ? "w-full h-full" : "";
+  // ウィジェットをタップして整形ゾーンへ
+  const handleWidgetTap = (widget: DashboardWidget) => {
+    setSelectedWidget(widget.id);
+    setEditWidth(widget.width ?? 2);
+    setEditHeight(widget.height ?? 1);
+    setIsEditing(true);
+  };
+
+  // ウィジェットを長押しで移動モード開始
+  const handleWidgetLongPressStart = (widget: DashboardWidget) => {
+    longPressRef.current = setTimeout(() => {
+      setMovingWidget(widget.id);
+      setSelectedWidget(widget.id);
+      setEditWidth(widget.width ?? 2);
+      setEditHeight(widget.height ?? 1);
+      setIsEditing(true);
+    }, 500);
+  };
+
+  const handleWidgetLongPressEnd = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current);
+      longPressRef.current = null;
+    }
+  };
+
+  // ウィジェットをレンダリング（サイズに関係なく表示）
+  const renderWidgetContent = (widget: DashboardWidget) => {
+    const w = widget.width ?? 2;
     
     switch (widget.id) {
       case 'start_timer':
         return (
           <motion.button
             onClick={() => !isEditMode && setFullscreenTimer(true)}
-            className={`${baseClass} w-full h-full bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm`}
+            className="w-full h-full bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 overflow-hidden"
             whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
-            <Maximize2 size={16} />
-            計測開始
+            <Maximize2 size={w > 1 ? 20 : 14} />
+            {w > 1 && <span className="text-sm">計測開始</span>}
           </motion.button>
         );
 
@@ -226,24 +249,24 @@ export const Dashboard: React.FC = () => {
         return (
           <motion.button
             onClick={() => !isEditMode && setShowPomodoroTimer(true)}
-            className={`${baseClass} w-full h-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 text-sm`}
+            className="w-full h-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl shadow-lg flex items-center justify-center gap-2 overflow-hidden"
             whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
-            <Clock size={16} />
-            ポモドーロ
+            <Clock size={w > 1 ? 20 : 14} />
+            {w > 1 && <span className="text-sm">ポモドーロ</span>}
           </motion.button>
         );
 
       case 'progress':
         return (
           <motion.div
-            className={`${baseClass} w-full h-full bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-100 dark:border-slate-700 shadow-sm`}
+            className="w-full h-full bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-center overflow-hidden"
             onClick={() => !isEditMode && setShowProgressModal(true)}
             whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[10px] font-medium text-slate-500">進捗</span>
-              <span className="text-lg font-bold text-slate-800 dark:text-slate-100">{progress.toFixed(0)}%</span>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-[10px] font-medium text-slate-500 truncate">進捗</span>
+              <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-lg' : 'text-sm'}`}>{progress.toFixed(0)}%</span>
             </div>
             <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
               <div className="h-full bg-primary-500 rounded-full" style={{ width: `${progress}%` }} />
@@ -253,60 +276,70 @@ export const Dashboard: React.FC = () => {
 
       case 'daily_goal':
         return (
-          <StatCard
-            icon={<Calendar className="text-blue-500" size={16} />}
-            label="目標"
-            value={formatTimeJapanese(realtimeDailyGoal)}
-            subtext=""
-            color="bg-blue-50 dark:bg-blue-900/20"
+          <div 
+            className="w-full h-full bg-blue-50 dark:bg-blue-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer"
             onClick={() => !isEditMode && setShowStudyTimeModal(true)}
-            compact
-          />
+          >
+            <Calendar className="text-blue-500" size={w > 1 ? 20 : 14} />
+            <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
+              {formatTimeJapanese(realtimeDailyGoal)}
+            </span>
+            {w > 1 && <span className="text-[10px] text-slate-500">目標</span>}
+          </div>
         );
 
       case 'today_study':
         return (
-          <StatCard
-            icon={<Clock className="text-green-500" size={16} />}
-            label="今日"
-            value={formatTimeJapanese(todayStudiedHours)}
-            subtext=""
-            color="bg-green-50 dark:bg-green-900/20"
+          <div 
+            className="w-full h-full bg-green-50 dark:bg-green-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer"
             onClick={() => !isEditMode && setShowStudyTimeModal(true)}
-            compact
-          />
+          >
+            <Clock className="text-green-500" size={w > 1 ? 20 : 14} />
+            <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
+              {formatTimeJapanese(todayStudiedHours)}
+            </span>
+            {w > 1 && <span className="text-[10px] text-slate-500">今日</span>}
+          </div>
         );
 
       case 'total_study':
         return (
-          <StatCard
-            icon={<TrendingUp className="text-purple-500" size={16} />}
-            label="総計"
-            value={formatTimeJapanese(totalStudiedHours)}
-            subtext=""
-            color="bg-purple-50 dark:bg-purple-900/20"
+          <div 
+            className="w-full h-full bg-purple-50 dark:bg-purple-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer"
             onClick={() => !isEditMode && setShowStudyTimeModal(true)}
-            compact
-          />
+          >
+            <TrendingUp className="text-purple-500" size={w > 1 ? 20 : 14} />
+            <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
+              {formatTimeJapanese(totalStudiedHours)}
+            </span>
+            {w > 1 && <span className="text-[10px] text-slate-500">総計</span>}
+          </div>
         );
 
       case 'remaining_time':
         return (
-          <StatCard
-            icon={<Clock className="text-orange-500" size={16} />}
-            label="残り"
-            value={formatCountdownJapanese(timeRemainingSeconds)}
-            subtext=""
-            color="bg-orange-50 dark:bg-orange-900/20"
-            compact
-          />
+          <div className="w-full h-full bg-orange-50 dark:bg-orange-900/20 rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden">
+            <Clock className="text-orange-500" size={w > 1 ? 20 : 14} />
+            <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
+              {formatCountdownJapanese(timeRemainingSeconds)}
+            </span>
+            {w > 1 && <span className="text-[10px] text-slate-500">残り</span>}
+          </div>
         );
 
       case 'category_chart':
-        return <CategoryChart />;
+        return (
+          <div className="w-full h-full overflow-hidden rounded-xl">
+            <CategoryChart />
+          </div>
+        );
 
       case 'today_review':
-        return <TodayReviewWidget />;
+        return (
+          <div className="w-full h-full overflow-hidden rounded-xl">
+            <TodayReviewWidget />
+          </div>
+        );
 
       default:
         return null;
@@ -323,7 +356,12 @@ export const Dashboard: React.FC = () => {
         <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">レイアウト編集</h2>
           <button
-            onClick={() => setIsEditMode(false)}
+            onClick={() => {
+              setIsEditMode(false);
+              setSelectedWidget(null);
+              setIsEditing(false);
+              setMovingWidget(null);
+            }}
             className="p-2 rounded-xl bg-primary-600 text-white"
           >
             <Check size={20} />
@@ -342,42 +380,45 @@ export const Dashboard: React.FC = () => {
               const widgetId = gridMap[y]?.[x];
               const widget = widgetId ? visibleWidgets.find(w => w.id === widgetId) : null;
               
-              // ウィジェットの開始セルかどうか
               const isWidgetStart = widget && widget.gridX === x && widget.gridY === y;
-              // ウィジェットで埋まっているが開始セルではない
               const isWidgetPart = widget && !isWidgetStart;
-              
-              // 配置可能かどうか
-              const canPlace = selectedWidget && canPlaceWidget(x, y, editWidth, editHeight);
+              const canPlace = selectedWidget && canPlaceWidget(x, y, editWidth, editHeight, movingWidget ?? undefined);
               
               if (isWidgetPart) {
-                return null; // 開始セル以外はスキップ
+                return null;
               }
               
               if (isWidgetStart && widget) {
                 const w = widget.width ?? 2;
                 const h = widget.height ?? 1;
+                const isSelected = selectedWidget === widget.id;
+                
                 return (
                   <div
                     key={`widget-${widget.id}`}
-                    className="relative bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-300 dark:border-primary-700 rounded-lg p-1"
+                    className={`relative rounded-lg transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-primary-100 dark:bg-primary-900/30 border-2 border-primary-500'
+                        : 'bg-primary-50 dark:bg-primary-900/20 border-2 border-primary-300 dark:border-primary-700'
+                    }`}
                     style={{
                       gridColumn: `span ${w}`,
                       gridRow: `span ${h}`,
                       minHeight: `${h * 50}px`,
                     }}
+                    onClick={() => handleWidgetTap(widget)}
+                    onTouchStart={() => handleWidgetLongPressStart(widget)}
+                    onTouchEnd={handleWidgetLongPressEnd}
+                    onMouseDown={() => handleWidgetLongPressStart(widget)}
+                    onMouseUp={handleWidgetLongPressEnd}
+                    onMouseLeave={handleWidgetLongPressEnd}
                   >
-                    <div className="absolute top-1 right-1 flex gap-1">
-                      <button
-                        onClick={() => removeWidget(widget.id)}
-                        className="p-1 rounded bg-red-100 dark:bg-red-900/30 text-red-500"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                    <div className="absolute top-1 left-1">
+                      <Move size={12} className="text-primary-400" />
                     </div>
                     <div className="flex items-center justify-center h-full">
                       <span className="text-xs font-medium text-primary-700 dark:text-primary-300">
-                        {WIDGET_NAMES[widget.id]}
+                        {WIDGET_NAMES[widget.id]} ({w}×{h})
                       </span>
                     </div>
                   </div>
@@ -388,18 +429,24 @@ export const Dashboard: React.FC = () => {
               return (
                 <div
                   key={`cell-${x}-${y}`}
-                  onClick={() => handleGridCellClick(x, y)}
+                  onClick={() => canPlace && handleGridCellClick(x, y)}
                   className={`aspect-square border-2 rounded transition-colors flex items-center justify-center text-[10px] ${
                     canPlace
                       ? 'border-primary-400 bg-primary-100 dark:bg-primary-900/30 cursor-pointer hover:bg-primary-200'
                       : 'border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'
                   }`}
                 >
-                  {canPlace && <span className="text-primary-500">+</span>}
+                  {canPlace && <Plus size={14} className="text-primary-500" />}
                 </div>
               );
             })}
           </div>
+          
+          {movingWidget && (
+            <p className="text-center text-xs text-primary-600 dark:text-primary-400 mt-2">
+              移動モード: 空きセルをタップして再配置
+            </p>
+          )}
         </div>
 
         {/* 整形ゾーン */}
@@ -409,12 +456,26 @@ export const Dashboard: React.FC = () => {
               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                 {WIDGET_NAMES[selectedWidget]} の整形
               </span>
-              <button
-                onClick={() => setSelectedWidget(null)}
-                className="text-xs text-slate-500"
-              >
-                キャンセル
-              </button>
+              <div className="flex gap-2">
+                {isEditing && (
+                  <button
+                    onClick={() => removeWidget(selectedWidget)}
+                    className="px-3 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg"
+                  >
+                    削除
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setSelectedWidget(null);
+                    setIsEditing(false);
+                    setMovingWidget(null);
+                  }}
+                  className="text-xs text-slate-500"
+                >
+                  キャンセル
+                </button>
+              </div>
             </div>
             
             {/* 幅スライダー */}
@@ -437,7 +498,7 @@ export const Dashboard: React.FC = () => {
               <button onClick={() => setEditWidth(Math.min(4, editWidth + 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700">
                 <Plus size={14} />
               </button>
-              <span className="text-xs font-medium w-8 text-right">{editWidth}マス</span>
+              <span className="text-xs font-medium w-8 text-right">{editWidth}</span>
             </div>
             
             {/* 高さスライダー */}
@@ -460,28 +521,30 @@ export const Dashboard: React.FC = () => {
               <button onClick={() => setEditHeight(Math.min(4, editHeight + 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700">
                 <Plus size={14} />
               </button>
-              <span className="text-xs font-medium w-8 text-right">{editHeight}マス</span>
+              <span className="text-xs font-medium w-8 text-right">{editHeight}</span>
             </div>
             
-            {/* プレビュー */}
-            <div className="mt-3 flex justify-center">
-              <div 
-                className="bg-primary-100 dark:bg-primary-900/30 border-2 border-primary-400 rounded-lg flex items-center justify-center"
-                style={{ 
-                  width: `${editWidth * 40}px`, 
-                  height: `${editHeight * 40}px` 
+            {/* 適用ボタン（編集中の場合） */}
+            {isEditing && !movingWidget && (
+              <button
+                onClick={() => {
+                  const widget = visibleWidgets.find(w => w.id === selectedWidget);
+                  if (widget) {
+                    placeWidget(selectedWidget, widget.gridX ?? 0, widget.gridY ?? 0, editWidth, editHeight);
+                  }
                 }}
+                className="w-full mt-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium"
               >
-                <span className="text-xs text-primary-600">{editWidth}×{editHeight}</span>
-              </div>
-            </div>
+                サイズを適用
+              </button>
+            )}
           </div>
         )}
 
         {/* ウィジェットパレット */}
         <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 safe-area-pb">
           <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-2 text-center">
-            ウィジェットをタップして選択 → サイズ調整 → グリッドに配置
+            配置済み→タップで整形 / 長押しで移動 | 未配置→タップで選択
           </p>
           <div className="flex gap-2 overflow-x-auto pb-2">
             {allWidgetIds.map((id) => {
@@ -490,7 +553,15 @@ export const Dashboard: React.FC = () => {
               return (
                 <button
                   key={id}
-                  onClick={() => !isUsed && setSelectedWidget(isSelected ? null : id)}
+                  onClick={() => {
+                    if (!isUsed) {
+                      setSelectedWidget(isSelected ? null : id);
+                      setEditWidth(2);
+                      setEditHeight(1);
+                      setIsEditing(false);
+                      setMovingWidget(null);
+                    }
+                  }}
                   disabled={isUsed}
                   className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
                     isUsed 
