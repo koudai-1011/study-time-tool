@@ -66,6 +66,9 @@ export const useNotificationManager = (options: NotificationManagerOptions) => {
   useEffect(() => {
     if (!isRunning || !isNotificationEnabled('timerCompletion')) return;
 
+    // 1分ごとに更新 (0秒, 60秒, 120秒...)
+    if (elapsed % 60 !== 0 && elapsed !== 0) return;
+
     const categoryName = getCategoryName(selectedCategory);
     const timeStr = formatTime(elapsed);
     
@@ -79,13 +82,15 @@ export const useNotificationManager = (options: NotificationManagerOptions) => {
       }
     }
 
-    // 1秒ごとに通知を更新
+    // 通知を更新 (ID: 1002 で固定)
     showNotification('学習記録中', {
       body,
       icon: '/icon.svg',
       tag: 'study-timer',
       silent: true,
-      renotify: false, // 音やバイブレーションを鳴らさない
+      renotify: false,
+      id: 1002,
+      ongoing: true,
     } as any);
   }, [elapsed, isRunning, selectedCategory, isPomodoroMode, isPomodoroBreak, isNotificationEnabled, getCategoryName, showNotification]);
 

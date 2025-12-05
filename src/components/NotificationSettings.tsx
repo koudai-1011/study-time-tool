@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStudy } from '../context/StudyContext';
+import { useNotification } from '../hooks/useNotification';
 import { Bell, Clock, Target, Calendar, Moon, AlertTriangle } from 'lucide-react';
 import type { NotificationSettings as NotificationSettingsType } from '../types';
 
@@ -20,7 +21,7 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsType = {
 };
 
 export const NotificationSettings: React.FC = () => {
-  const { settings, updateSettings } = useStudy();
+  const { settings, updateSettings, dailyGoalHours } = useStudy();
   const [notifSettings, setNotifSettings] = useState<NotificationSettingsType>(
     settings.notificationSettings || DEFAULT_NOTIFICATION_SETTINGS
   );
@@ -42,10 +43,45 @@ export const NotificationSettings: React.FC = () => {
     setNotifSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleSave = () => {
+  const { scheduleRepeatingNotification, cancelNotification, requestPermission } = useNotification();
+
+  const handleSave = async () => {
     updateSettings({ ...settings, notificationSettings: notifSettings });
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 2000);
+
+    // 通知権限リクエスト
+    if (notifSettings.enabled) {
+      await requestPermission();
+    }
+
+    // 日次リマインダー設定
+    if (notifSettings.enabled && notifSettings.dailyReminder && notifSettings.dailyReminderTime) {
+      const [hour, minute] = notifSettings.dailyReminderTime.split(':').map(Number);
+      await scheduleRepeatingNotification(
+        2001, 
+        '📚 学習開始のお知らせ', 
+        `今日の目標: ${dailyGoalHours}時間\n学習を始めましょう！`, 
+        hour, 
+        minute
+      );
+    } else {
+      await cancelNotification(2001);
+    }
+
+    // 夜間リマインダー設定
+    if (notifSettings.enabled && notifSettings.eveningReminder && notifSettings.eveningReminderTime) {
+      const [hour, minute] = notifSettings.eveningReminderTime.split(':').map(Number);
+      await scheduleRepeatingNotification(
+        2002, 
+        '🌙 今日の学習進捗', 
+        '今日の学習目標は達成できましたか？進捗を確認しましょう。', 
+        hour, 
+        minute
+      );
+    } else {
+      await cancelNotification(2002);
+    }
   };
 
   const ToggleRow = ({ 

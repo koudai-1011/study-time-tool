@@ -81,7 +81,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
   );
   
   const { requestWakeLock, releaseWakeLock } = useWakeLock();
-  const { requestPermission, closeNotification } = useNotification();
+  const { requestPermission, closeNotification, scheduleNotification, cancelNotification } = useNotification();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // Disable global swipe navigation when timer is open
@@ -103,6 +103,18 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
   const handleStart = async () => {
     await requestPermission();
     start();
+    
+    // 通知をスケジュール (終了時刻)
+    const remainingSec = isBreak ? breakSeconds - elapsed : focusSeconds - elapsed;
+    if (remainingSec > 0) {
+      const finishTime = new Date(Date.now() + remainingSec * 1000);
+      const title = isBreak ? '🍅 休憩終了！' : '🍅 集中時間終了！';
+      const body = isBreak 
+        ? `次の集中時間(${notifSettings?.pomodoroFocusMinutes}分)を始めましょう。` 
+        : `お疲れ様でした。${notifSettings?.pomodoroBreakMinutes}分間の休憩を取りましょう。`;
+      
+      await scheduleNotification(1001, title, body, finishTime);
+    }
   };
 
   // Handle side effects (WakeLock)
@@ -130,12 +142,14 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
       addLog(elapsed, selectedCategory);
     }
     reset();
+    cancelNotification(1001); // スケジュールキャンセル
     if (onClose) onClose();
   };
 
   const handleCloseClick = () => {
     if (isRunning) {
       stop(); // Pause timer
+      cancelNotification(1001); // スケジュールキャンセル
       setShowConfirmModal(true);
     } else if (elapsed > 0 && !isBreak) {
        setShowConfirmModal(true);
