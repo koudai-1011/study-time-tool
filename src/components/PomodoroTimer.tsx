@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Play, Pause, Square, RotateCcw, X } from 'lucide-react';
+import { Play, Pause, Square, RotateCcw, X, Check } from 'lucide-react';
 import { useStudy } from '../context/StudyContext';
 import { formatTime } from '../utils/timeFormat';
 import { usePomodoroTimer } from '../hooks/usePomodoroTimer';
@@ -158,23 +158,23 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
   const remainingSeconds = targetSeconds - elapsed;
   const progress = (elapsed / targetSeconds) * 100;
 
-  const CategorySelector = ({ compact = false }: { compact?: boolean }) => (
-    <div className={`grid ${compact ? 'grid-cols-5' : 'grid-cols-5'} gap-2 ${compact ? '' : 'mb-4'} justify-center mx-auto max-w-md`}>
+  const CategorySelector = () => (
+    <div className="flex flex-wrap gap-2 justify-center mx-auto max-w-sm">
       {settings.categories.map(category => (
         <button
           key={category.id}
           type="button"
           onClick={() => setSelectedCategory(category.id)}
-          className={`p-3 rounded-lg transition-all ${selectedCategory === category.id
-            ? 'ring-4 ring-white scale-110'
-            : 'opacity-60 hover:opacity-100'
-            }`}
+          className={`w-10 h-10 rounded-lg transition-all flex items-center justify-center ${
+            selectedCategory === category.id
+              ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-900/50'
+              : 'opacity-60 hover:opacity-100'
+          }`}
           style={{ backgroundColor: category.color }}
           title={category.name}
         >
-          <span className="sr-only">{category.name}</span>
           {selectedCategory === category.id && (
-            <span className="block w-2 h-2 bg-white rounded-full mx-auto" />
+            <Check size={16} className="text-white drop-shadow" />
           )}
         </button>
       ))}
@@ -226,7 +226,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
             <p className="text-center text-sm text-slate-600 dark:text-slate-400 mb-4">
               選択中: {settings.categories.find(c => c.id === selectedCategory)?.name ?? '未選択'}
             </p>
-            <CategorySelector compact />
+            <CategorySelector />
           </div>
 
           {/* Time Display */}

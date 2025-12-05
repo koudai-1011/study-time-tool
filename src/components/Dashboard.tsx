@@ -90,8 +90,7 @@ const SortableWidget: React.FC<SortableWidgetProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    zIndex: isDragging ? 10 : 1,
-    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 50 : 1,
   };
 
   const sizeClass = getSizeClass(widget.size);
@@ -104,42 +103,64 @@ const SortableWidget: React.FC<SortableWidgetProps> = ({
     <div
       ref={setNodeRef}
       style={style}
-      className={`${sizeClass} relative`}
-      {...attributes}
-      {...listeners}
+      className={`${sizeClass} relative ${isDragging ? 'opacity-90 scale-105' : ''}`}
     >
-      {/* 編集オーバーレイ */}
-      <div className="absolute inset-0 bg-black/40 rounded-2xl z-10 flex flex-col items-center justify-center gap-2">
-        <span className="text-white text-xs font-medium">{WIDGET_NAMES[widget.id]}</span>
+      {/* ウィジェット本体 */}
+      <div className="opacity-60">
+        {children}
+      </div>
+      
+      {/* 編集オーバーレイ - ドラッグハンドル */}
+      <div 
+        className="absolute inset-0 rounded-2xl border-2 border-dashed border-primary-400 bg-primary-500/10 flex flex-col items-center justify-center cursor-grab active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        {/* ウィジェット名 */}
+        <span className="text-primary-700 dark:text-primary-300 text-xs font-bold mb-2 bg-white dark:bg-slate-800 px-2 py-1 rounded">
+          {WIDGET_NAMES[widget.id]}
+        </span>
         
-        {/* サイズ変更ボタン */}
-        <div className="flex gap-1">
+        {/* コントロールボタン */}
+        <div className="flex gap-2">
+          {/* サイズ: 小 */}
           <button
-            onClick={(e) => { e.stopPropagation(); onSizeChange(widget.id, 'small'); }}
-            className={`p-1.5 rounded ${widget.size === 'small' ? 'bg-white text-slate-800' : 'bg-white/20 text-white'}`}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSizeChange(widget.id, 'small'); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              widget.size === 'small' 
+                ? 'bg-primary-600 text-white' 
+                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
+            }`}
+            title="小サイズ"
           >
             <Square size={14} />
           </button>
+          
+          {/* サイズ: 大 */}
           <button
-            onClick={(e) => { e.stopPropagation(); onSizeChange(widget.id, 'large'); }}
-            className={`p-1.5 rounded ${widget.size === 'large' || widget.size === 'full' ? 'bg-white text-slate-800' : 'bg-white/20 text-white'}`}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onSizeChange(widget.id, 'large'); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+              widget.size === 'large' || widget.size === 'full'
+                ? 'bg-primary-600 text-white' 
+                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
+            }`}
+            title="大サイズ"
           >
             <RectangleHorizontal size={14} />
           </button>
-        </div>
 
-        {/* 非表示ボタン */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onVisibilityChange(widget.id); }}
-          className="p-1.5 rounded bg-red-500/80 text-white"
-        >
-          <EyeOff size={14} />
-        </button>
-      </div>
-      
-      {/* ウィジェット本体 */}
-      <div className="pointer-events-none">
-        {children}
+          {/* 非表示 */}
+          <button
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onVisibilityChange(widget.id); }}
+            onPointerDown={(e) => e.stopPropagation()}
+            className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800"
+            title="非表示にする"
+          >
+            <EyeOff size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );
