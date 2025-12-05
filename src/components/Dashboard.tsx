@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
-import { Target, Calendar, Clock, TrendingUp, Maximize2 } from 'lucide-react';
-import type { DashboardWidget, DashboardWidgetSize } from '../types';
+import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, EyeOff, Square, RectangleHorizontal } from 'lucide-react';
+import type { DashboardWidget, DashboardWidgetSize, DashboardWidgetType } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { StatCard } from './StatCard';
 import { CategoryChart } from './CategoryChart';
@@ -13,6 +13,25 @@ import { TodayReviewWidget } from './TodayReviewWidget';
 import { SabotageModal } from './SabotageModal';
 import { ProgressDetailModal } from './ProgressDetailModal';
 import { StudyTimeDetailModal } from './StudyTimeDetailModal';
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // サイズに応じたグリッドクラスを返す
 const getSizeClass = (size: DashboardWidgetSize): string => {
@@ -30,11 +49,108 @@ const getSizeClass = (size: DashboardWidgetSize): string => {
   }
 };
 
+// ウィジェット名のマッピング
+const WIDGET_NAMES: Record<DashboardWidgetType, string> = {
+  start_timer: '計測開始',
+  pomodoro_timer: 'ポモドーロ',
+  progress: '進捗',
+  daily_goal: '1日の目標',
+  today_study: '今日の学習',
+  total_study: '総学習時間',
+  remaining_time: '残り時間',
+  category_chart: '円グラフ',
+  today_review: '復習',
+};
+
+// ソータブルウィジェットコンポーネント
+interface SortableWidgetProps {
+  widget: DashboardWidget;
+  isEditMode: boolean;
+  onSizeChange: (id: DashboardWidgetType, size: DashboardWidgetSize) => void;
+  onVisibilityChange: (id: DashboardWidgetType) => void;
+  children: React.ReactNode;
+}
+
+const SortableWidget: React.FC<SortableWidgetProps> = ({
+  widget,
+  isEditMode,
+  onSizeChange,
+  onVisibilityChange,
+  children
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id: widget.id, disabled: !isEditMode });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 10 : 1,
+    opacity: isDragging ? 0.8 : 1,
+  };
+
+  const sizeClass = getSizeClass(widget.size);
+
+  if (!isEditMode) {
+    return <div className={sizeClass}>{children}</div>;
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`${sizeClass} relative`}
+      {...attributes}
+      {...listeners}
+    >
+      {/* 編集オーバーレイ */}
+      <div className="absolute inset-0 bg-black/40 rounded-2xl z-10 flex flex-col items-center justify-center gap-2">
+        <span className="text-white text-xs font-medium">{WIDGET_NAMES[widget.id]}</span>
+        
+        {/* サイズ変更ボタン */}
+        <div className="flex gap-1">
+          <button
+            onClick={(e) => { e.stopPropagation(); onSizeChange(widget.id, 'small'); }}
+            className={`p-1.5 rounded ${widget.size === 'small' ? 'bg-white text-slate-800' : 'bg-white/20 text-white'}`}
+          >
+            <Square size={14} />
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onSizeChange(widget.id, 'large'); }}
+            className={`p-1.5 rounded ${widget.size === 'large' || widget.size === 'full' ? 'bg-white text-slate-800' : 'bg-white/20 text-white'}`}
+          >
+            <RectangleHorizontal size={14} />
+          </button>
+        </div>
+
+        {/* 非表示ボタン */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onVisibilityChange(widget.id); }}
+          className="p-1.5 rounded bg-red-500/80 text-white"
+        >
+          <EyeOff size={14} />
+        </button>
+      </div>
+      
+      {/* ウィジェット本体 */}
+      <div className="pointer-events-none">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 export const Dashboard: React.FC = () => {
   const {
     totalStudiedHours,
     todayStudiedHours,
     settings,
+    updateSettings,
     timeRemainingSeconds
   } = useStudy();
 
@@ -48,6 +164,7 @@ export const Dashboard: React.FC = () => {
   const [showProgressModal, setShowProgressModal] = useState(false);
   const [showStudyTimeModal, setShowStudyTimeModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Update current time every second for real-time daily goal calculation
   useEffect(() => {
@@ -63,7 +180,6 @@ export const Dashboard: React.FC = () => {
   const timeUntilEnd = endDateParsed ? Math.max(0, endDateParsed.getTime() - now.getTime()) : 0;
   const hoursUntilEnd = timeUntilEnd / (1000 * 60 * 60);
   const remainingHoursToStudy = Math.max(0, settings.targetHours - totalStudiedHours);
-  // Real-time daily goal (hours/day) that updates every second as remaining time decreases.
   const realtimeDailyGoal = hoursUntilEnd > 0 ? (remainingHoursToStudy / hoursUntilEnd) * 24 : 0;
 
   // Default widgets definition with size
@@ -80,7 +196,7 @@ export const Dashboard: React.FC = () => {
     ...(reviewEnabled ? [{ id: 'today_review' as const, visible: true, order: 8, size: 'large' as const }] : []),
   ];
 
-  // Merge saved layout with default widgets to ensure new widgets appear
+  // Merge saved layout with default widgets
   const layout = {
     widgets: defaultWidgets.map(defaultWidget => {
       const savedWidget = settings.dashboardLayout?.widgets.find(w => w.id === defaultWidget.id);
@@ -88,18 +204,69 @@ export const Dashboard: React.FC = () => {
     }).sort((a, b) => a.order - b.order)
   };
 
-  // ウィジェットをレンダリング
-  const renderWidget = (widget: DashboardWidget) => {
-    const sizeClass = getSizeClass(widget.size);
-    
+  // dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 150,
+        tolerance: 5,
+      },
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const visibleWidgets = layout.widgets.filter(w => w.visible);
+      const oldIndex = visibleWidgets.findIndex(w => w.id === active.id);
+      const newIndex = visibleWidgets.findIndex(w => w.id === over.id);
+      
+      const newVisibleWidgets = arrayMove(visibleWidgets, oldIndex, newIndex);
+      
+      // Update order for all widgets
+      const hiddenWidgets = layout.widgets.filter(w => !w.visible);
+      const allWidgets = [...newVisibleWidgets, ...hiddenWidgets].map((w, i) => ({ ...w, order: i }));
+      
+      updateSettings({
+        ...settings,
+        dashboardLayout: { widgets: allWidgets }
+      });
+    }
+  };
+
+  const handleSizeChange = (id: DashboardWidgetType, size: DashboardWidgetSize) => {
+    const newWidgets = layout.widgets.map(w => 
+      w.id === id ? { ...w, size } : w
+    );
+    updateSettings({
+      ...settings,
+      dashboardLayout: { widgets: newWidgets }
+    });
+  };
+
+  const handleVisibilityChange = (id: DashboardWidgetType) => {
+    const newWidgets = layout.widgets.map(w => 
+      w.id === id ? { ...w, visible: !w.visible } : w
+    );
+    updateSettings({
+      ...settings,
+      dashboardLayout: { widgets: newWidgets }
+    });
+  };
+
+  // ウィジェットをレンダリング（内部コンテンツのみ）
+  const renderWidgetContent = (widget: DashboardWidget) => {
     switch (widget.id) {
       case 'start_timer':
         return (
           <motion.button
-            key="start_timer"
-            onClick={() => setFullscreenTimer(true)}
-            className={`${sizeClass} bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 dark:from-primary-500 dark:to-primary-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary-600/20 transition-all flex items-center justify-center gap-2`}
-            whileTap={{ scale: 0.98 }}
+            onClick={() => !isEditMode && setFullscreenTimer(true)}
+            className="w-full bg-gradient-to-r from-primary-600 to-primary-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-primary-600/20 flex items-center justify-center gap-2"
+            whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
             <Maximize2 size={20} />
             計測開始
@@ -109,10 +276,9 @@ export const Dashboard: React.FC = () => {
       case 'pomodoro_timer':
         return (
           <motion.button
-            key="pomodoro_timer"
-            onClick={() => setShowPomodoroTimer(true)}
-            className={`${sizeClass} bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/20 transition-all flex items-center justify-center gap-2`}
-            whileTap={{ scale: 0.98 }}
+            onClick={() => !isEditMode && setShowPomodoroTimer(true)}
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2"
+            whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
             <Clock size={20} />
             ポモドーロ
@@ -122,10 +288,9 @@ export const Dashboard: React.FC = () => {
       case 'progress':
         return (
           <motion.div
-            key="progress"
-            className={`${sizeClass} bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm cursor-pointer`}
-            onClick={() => setShowProgressModal(true)}
-            whileTap={{ scale: 0.98 }}
+            className="w-full bg-white dark:bg-slate-800 rounded-2xl p-4 border border-slate-100 dark:border-slate-700 shadow-sm"
+            onClick={() => !isEditMode && setShowProgressModal(true)}
+            whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
             <div className="flex justify-between items-center mb-3">
               <div className="flex items-center gap-2">
@@ -150,81 +315,68 @@ export const Dashboard: React.FC = () => {
 
       case 'daily_goal':
         return (
-          <div key="daily_goal" className={sizeClass}>
-            <StatCard
-              icon={<Calendar className="text-blue-500" size={20} />}
-              label="1日の目標"
-              value={formatTimeJapanese(realtimeDailyGoal)}
-              subtext="目標期限から算出"
-              color="bg-blue-50 dark:bg-blue-900/20"
-              onClick={() => setShowStudyTimeModal(true)}
-              compact
-            />
-          </div>
+          <StatCard
+            icon={<Calendar className="text-blue-500" size={20} />}
+            label="1日の目標"
+            value={formatTimeJapanese(realtimeDailyGoal)}
+            subtext="目標期限から算出"
+            color="bg-blue-50 dark:bg-blue-900/20"
+            onClick={() => !isEditMode && setShowStudyTimeModal(true)}
+            compact
+          />
         );
 
       case 'today_study':
         return (
-          <div key="today_study" className={sizeClass}>
-            <StatCard
-              icon={<Clock className="text-green-500" size={20} />}
-              label="今日の学習"
-              value={formatTimeJapanese(todayStudiedHours)}
-              subtext={todayStudiedHours >= realtimeDailyGoal ? "目標達成！" : `あと${Math.max(0, realtimeDailyGoal - todayStudiedHours).toFixed(1)}h`}
-              color="bg-green-50 dark:bg-green-900/20"
-              onClick={() => setShowStudyTimeModal(true)}
-              compact
-            />
-          </div>
+          <StatCard
+            icon={<Clock className="text-green-500" size={20} />}
+            label="今日の学習"
+            value={formatTimeJapanese(todayStudiedHours)}
+            subtext={todayStudiedHours >= realtimeDailyGoal ? "目標達成！" : `あと${Math.max(0, realtimeDailyGoal - todayStudiedHours).toFixed(1)}h`}
+            color="bg-green-50 dark:bg-green-900/20"
+            onClick={() => !isEditMode && setShowStudyTimeModal(true)}
+            compact
+          />
         );
 
       case 'total_study':
         return (
-          <div key="total_study" className={sizeClass}>
-            <StatCard
-              icon={<TrendingUp className="text-purple-500" size={20} />}
-              label="総学習時間"
-              value={formatTimeJapanese(totalStudiedHours)}
-              subtext="積み上げ中"
-              color="bg-purple-50 dark:bg-purple-900/20"
-              onClick={() => setShowStudyTimeModal(true)}
-              compact
-            />
-          </div>
+          <StatCard
+            icon={<TrendingUp className="text-purple-500" size={20} />}
+            label="総学習時間"
+            value={formatTimeJapanese(totalStudiedHours)}
+            subtext="積み上げ中"
+            color="bg-purple-50 dark:bg-purple-900/20"
+            onClick={() => !isEditMode && setShowStudyTimeModal(true)}
+            compact
+          />
         );
 
       case 'remaining_time':
         return (
-          <div key="remaining_time" className={sizeClass}>
-            <StatCard
-              icon={<Clock className="text-orange-500" size={20} />}
-              label="残り時間"
-              value={formatCountdownJapanese(timeRemainingSeconds)}
-              subtext={settings.endDate ? `期限: ${settings.endDate}` : '期限なし'}
-              color="bg-orange-50 dark:bg-orange-900/20"
-              compact
-            />
-          </div>
+          <StatCard
+            icon={<Clock className="text-orange-500" size={20} />}
+            label="残り時間"
+            value={formatCountdownJapanese(timeRemainingSeconds)}
+            subtext={settings.endDate ? `期限: ${settings.endDate}` : '期限なし'}
+            color="bg-orange-50 dark:bg-orange-900/20"
+            compact
+          />
         );
 
       case 'category_chart':
-        return (
-          <div key="category_chart" className={sizeClass}>
-            <CategoryChart />
-          </div>
-        );
+        return <CategoryChart />;
 
       case 'today_review':
-        return (
-          <div key="today_review" className={sizeClass}>
-            <TodayReviewWidget />
-          </div>
-        );
+        return <TodayReviewWidget />;
 
       default:
         return null;
     }
   };
+
+  const visibleWidgets = layout.widgets.filter(w => w.visible);
+  const hiddenWidgets = layout.widgets.filter(w => !w.visible);
 
   return (
     <div className="space-y-4 pb-24 md:pb-6">
@@ -235,14 +387,71 @@ export const Dashboard: React.FC = () => {
             {now.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
           </p>
         </div>
+        
+        {/* 編集ボタン */}
+        <button
+          onClick={() => setIsEditMode(!isEditMode)}
+          className={`p-2 rounded-xl transition-colors ${
+            isEditMode 
+              ? 'bg-primary-600 text-white' 
+              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+          }`}
+        >
+          {isEditMode ? <Check size={20} /> : <Pencil size={20} />}
+        </button>
       </header>
 
-      {/* ウィジェットグリッド - iPhone風2列レイアウト */}
-      <div className="grid grid-cols-2 gap-3">
-        {layout.widgets
-          .filter(w => w.visible)
-          .map((widget) => renderWidget(widget))}
-      </div>
+      {/* 編集モード時のヘルプ */}
+      {isEditMode && (
+        <div className="bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 text-xs p-3 rounded-xl text-center">
+          ドラッグで並び替え • サイズ変更 • 非表示
+        </div>
+      )}
+
+      {/* ウィジェットグリッド */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={visibleWidgets.map(w => w.id)}
+          strategy={rectSortingStrategy}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            {visibleWidgets.map((widget) => (
+              <SortableWidget
+                key={widget.id}
+                widget={widget}
+                isEditMode={isEditMode}
+                onSizeChange={handleSizeChange}
+                onVisibilityChange={handleVisibilityChange}
+              >
+                {renderWidgetContent(widget)}
+              </SortableWidget>
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+
+      {/* 非表示ウィジェット一覧（編集モード時のみ） */}
+      {isEditMode && hiddenWidgets.length > 0 && (
+        <div className="mt-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">非表示のウィジェット</p>
+          <div className="flex flex-wrap gap-2">
+            {hiddenWidgets.map((widget) => (
+              <button
+                key={widget.id}
+                onClick={() => handleVisibilityChange(widget.id)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-xs"
+              >
+                <Eye size={12} />
+                {WIDGET_NAMES[widget.id]}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Modals */}
       <AnimatePresence>
