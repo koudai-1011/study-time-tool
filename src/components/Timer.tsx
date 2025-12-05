@@ -243,11 +243,14 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
               </button>
             </div>
 
-            {isRunning && (
-              <p className="mt-8 text-lg md:text-xl text-primary-600 dark:text-primary-400 font-bold animate-pulse">
-                集中モード中...
-              </p>
-            )}
+            {/* Status message - 常に高さを確保 */}
+            <div className="h-12 mt-8 flex items-center justify-center">
+              {isRunning && (
+                <p className="text-lg md:text-xl text-primary-600 dark:text-primary-400 font-bold animate-pulse">
+                  集中モード中...
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Confirmation Modal */}

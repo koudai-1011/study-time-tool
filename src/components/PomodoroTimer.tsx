@@ -288,11 +288,14 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
             集中: {focusSeconds / 60}分 / 休憩: {breakSeconds / 60}分
           </div>
 
-          {isRunning && (
-            <p className="mt-6 text-primary-600 dark:text-primary-400 font-bold animate-pulse text-lg">
-              {isBreak ? 'リラックスしましょう...' : '集中モード中...'}
-            </p>
-          )}
+          {/* Status message - 常に高さを確保 */}
+          <div className="h-12 mt-6 flex items-center justify-center">
+            {isRunning && (
+              <p className="text-primary-600 dark:text-primary-400 font-bold animate-pulse text-lg">
+                {isBreak ? 'リラックスしましょう...' : '集中モード中...'}
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Confirmation Modal */}

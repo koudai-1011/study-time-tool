@@ -223,17 +223,21 @@ export const Dashboard: React.FC = () => {
     }).sort((a, b) => a.order - b.order)
   };
 
-  // dnd-kit sensors
+  // dnd-kit sensors - ドラッグ開始の距離制限を設定
   const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 150,
+        delay: 100,
         tolerance: 5,
       },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
     })
   );
 
@@ -437,7 +441,13 @@ export const Dashboard: React.FC = () => {
           items={visibleWidgets.map(w => w.id)}
           strategy={rectSortingStrategy}
         >
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid grid-cols-2 gap-3 ${isEditMode ? 'p-2 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600' : ''}`}>
+            {/* 編集モード時のガイドライン表示 */}
+            {isEditMode && (
+              <div className="col-span-2 text-center text-xs text-slate-400 dark:text-slate-500 py-1">
+                📦 ウィジェット名をドラッグして並び替え
+              </div>
+            )}
             {visibleWidgets.map((widget) => (
               <SortableWidget
                 key={widget.id}
