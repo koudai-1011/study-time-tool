@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
-import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, GripVertical } from 'lucide-react';
+import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, X } from 'lucide-react';
 import type { DashboardWidget, DashboardWidgetType } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { CategoryChart } from './CategoryChart';
@@ -16,7 +16,6 @@ import { StudyTimeDetailModal } from './StudyTimeDetailModal';
 // グリッド設定
 const GRID_COLS = 4;
 const GRID_ROWS = 8;
-const CELL_SIZE = 70; // px
 
 // ウィジェット名のマッピング
 const WIDGET_NAMES: Record<DashboardWidgetType, string> = {
@@ -44,6 +43,58 @@ const WIDGET_ICONS: Record<DashboardWidgetType, React.ReactNode> = {
   today_review: <Eye size={16} />,
 };
 
+// 削除確認モーダル
+const DeleteConfirmModal: React.FC<{
+  title: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}> = ({ title, onConfirm, onCancel }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-xl">
+      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2">削除確認</h3>
+      <p className="text-slate-600 dark:text-slate-400 mb-6">{title}を削除しますか？</p>
+      <div className="flex gap-3">
+        <button
+          onClick={onCancel}
+          className="flex-1 py-2 px-4 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium"
+        >
+          キャンセル
+        </button>
+        <button
+          onClick={onConfirm}
+          className="flex-1 py-2 px-4 bg-red-500 text-white rounded-xl font-medium"
+        >
+          削除
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
+// ウィジェット詳細モーダル（小サイズ時のタップで表示）
+const WidgetDetailModal: React.FC<{
+  widget: DashboardWidget;
+  onClose: () => void;
+  children: React.ReactNode;
+}> = ({ widget, onClose, children }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div 
+      className="bg-white dark:bg-slate-800 rounded-2xl p-4 max-w-md w-full shadow-xl"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{WIDGET_NAMES[widget.id]}</h3>
+        <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
+          <X size={20} className="text-slate-500" />
+        </button>
+      </div>
+      <div className="min-h-[200px]">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
 export const Dashboard: React.FC = () => {
   const {
     totalStudiedHours,
@@ -70,14 +121,11 @@ export const Dashboard: React.FC = () => {
   const [editWidth, setEditWidth] = useState(2);
   const [editHeight, setEditHeight] = useState(1);
   const [isEditing, setIsEditing] = useState(false);
+  const [movingWidget, setMovingWidget] = useState<DashboardWidgetType | null>(null);
   
-  // ドラッグ&ドロップ状態
-  const [draggingWidget, setDraggingWidget] = useState<DashboardWidgetType | null>(null);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const [dragPosition, setDragPosition] = useState({ x: 0, y: 0 });
-  const [dropTarget, setDropTarget] = useState<{ x: number; y: number } | null>(null);
-  const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
+  // 削除確認とウィジェット詳細
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: DashboardWidgetType; name: string } | null>(null);
+  const [detailWidget, setDetailWidget] = useState<DashboardWidget | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -94,6 +142,8 @@ export const Dashboard: React.FC = () => {
   const realtimeDailyGoal = hoursUntilEnd > 0 ? (remainingHoursToStudy / hoursUntilEnd) * 24 : 0;
 
   const reviewEnabled = settings.reviewSettings?.enabled || false;
+  const confirmBeforeDelete = settings.confirmBeforeDelete !== false; // デフォルトtrue
+
   const allWidgetIds: DashboardWidgetType[] = [
     'start_timer', 'pomodoro_timer', 'progress', 'daily_goal', 
     'today_study', 'total_study', 'remaining_time', 'category_chart',
@@ -154,15 +204,18 @@ export const Dashboard: React.FC = () => {
     return map;
   }, [visibleWidgets]);
 
-  // セルの空き状況を確認
+  // セルの空き状況を確認（修正版）
   const canPlaceWidget = useCallback((startX: number, startY: number, width: number, height: number, excludeId?: DashboardWidgetType) => {
+    // 範囲チェック
+    if (startX < 0 || startY < 0) return false;
+    if (startX + width > GRID_COLS) return false;
+    if (startY + height > GRID_ROWS) return false;
+    
     const map = getGridMap(excludeId);
     for (let dy = 0; dy < height; dy++) {
       for (let dx = 0; dx < width; dx++) {
         const y = startY + dy;
         const x = startX + dx;
-        if (y >= GRID_ROWS || x >= GRID_COLS || x < 0 || y < 0) return false;
-        if (x + width > GRID_COLS) return false;
         if (map[y][x] !== null) return false;
       }
     }
@@ -185,8 +238,7 @@ export const Dashboard: React.FC = () => {
     
     setSelectedWidget(null);
     setIsEditing(false);
-    setDraggingWidget(null);
-    setDropTarget(null);
+    setMovingWidget(null);
   };
 
   // ウィジェット削除
@@ -200,97 +252,75 @@ export const Dashboard: React.FC = () => {
     });
     setSelectedWidget(null);
     setIsEditing(false);
+    setDeleteConfirm(null);
+  };
+
+  // 削除ハンドラー（確認付き）
+  const handleDeleteWidget = (widgetId: DashboardWidgetType) => {
+    if (confirmBeforeDelete) {
+      setDeleteConfirm({ id: widgetId, name: WIDGET_NAMES[widgetId] });
+    } else {
+      removeWidget(widgetId);
+    }
   };
 
   // グリッドセルをタップして配置
   const handleGridCellClick = (x: number, y: number) => {
-    if (draggingWidget) return;
     if (!selectedWidget) return;
-    if (!canPlaceWidget(x, y, editWidth, editHeight)) return;
+    
+    // 移動モード時は移動するウィジェットを除外してチェック
+    const excludeId = movingWidget ?? undefined;
+    if (!canPlaceWidget(x, y, editWidth, editHeight, excludeId)) return;
     
     placeWidget(selectedWidget, x, y, editWidth, editHeight);
   };
 
   // ウィジェットをタップして整形ゾーンへ
   const handleWidgetTap = (widget: DashboardWidget) => {
-    if (draggingWidget) return;
     setSelectedWidget(widget.id);
     setEditWidth(widget.width ?? 2);
     setEditHeight(widget.height ?? 1);
     setIsEditing(true);
+    setMovingWidget(null);
   };
 
-  // ドラッグ開始（長押し）
-  const handleDragStart = (widget: DashboardWidget, clientX: number, clientY: number) => {
-    if (!gridRef.current) return;
-    const rect = gridRef.current.getBoundingClientRect();
-    setDraggingWidget(widget.id);
-    setDragOffset({
-      x: clientX - rect.left - (widget.gridX ?? 0) * (CELL_SIZE + 4),
-      y: clientY - rect.top - (widget.gridY ?? 0) * (CELL_SIZE + 4),
-    });
-    setDragPosition({ x: clientX, y: clientY });
+  // 移動モード開始
+  const handleMoveWidget = (widget: DashboardWidget) => {
+    setSelectedWidget(widget.id);
     setEditWidth(widget.width ?? 2);
     setEditHeight(widget.height ?? 1);
+    setMovingWidget(widget.id);
+    setIsEditing(true);
   };
 
-  // ドラッグ中
-  const handleDragMove = (clientX: number, clientY: number) => {
-    if (!draggingWidget || !gridRef.current) return;
-    setDragPosition({ x: clientX, y: clientY });
-    
-    const rect = gridRef.current.getBoundingClientRect();
-    const gridX = Math.floor((clientX - rect.left - dragOffset.x + CELL_SIZE / 2) / (CELL_SIZE + 4));
-    const gridY = Math.floor((clientY - rect.top - dragOffset.y + CELL_SIZE / 2) / (CELL_SIZE + 4));
-    
-    if (gridX >= 0 && gridX < GRID_COLS && gridY >= 0 && gridY < GRID_ROWS) {
-      if (canPlaceWidget(gridX, gridY, editWidth, editHeight, draggingWidget)) {
-        setDropTarget({ x: gridX, y: gridY });
-      } else {
-        setDropTarget(null);
-      }
-    } else {
-      setDropTarget(null);
-    }
-  };
-
-  // ドラッグ終了
-  const handleDragEnd = () => {
-    if (draggingWidget && dropTarget) {
-      placeWidget(draggingWidget, dropTarget.x, dropTarget.y, editWidth, editHeight);
-    }
-    setDraggingWidget(null);
-    setDropTarget(null);
-  };
-
-  // 長押し開始
-  const handleLongPressStart = (widget: DashboardWidget, e: React.TouchEvent | React.MouseEvent) => {
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    
-    longPressRef.current = setTimeout(() => {
-      handleDragStart(widget, clientX, clientY);
-    }, 300);
-  };
-
-  const handleLongPressEnd = () => {
-    if (longPressRef.current) {
-      clearTimeout(longPressRef.current);
-      longPressRef.current = null;
-    }
-  };
-
-  // タッチ/マウスムーブ
-  const handlePointerMove = (e: React.TouchEvent | React.MouseEvent) => {
-    if (!draggingWidget) return;
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    handleDragMove(clientX, clientY);
+  // サイズが小さいかどうか判定
+  const isSmallWidget = (widget: DashboardWidget) => {
+    const w = widget.width ?? 2;
+    const h = widget.height ?? 1;
+    // 1x1または複雑なウィジェットで2x1未満
+    if ((widget.id === 'category_chart' || widget.id === 'today_review') && (w < 2 || h < 2)) return true;
+    if (widget.id === 'progress' && w < 2) return true;
+    return w === 1 && h === 1;
   };
 
   // ウィジェットをレンダリング
-  const renderWidgetContent = (widget: DashboardWidget) => {
+  const renderWidgetContent = (widget: DashboardWidget, forModal = false) => {
     const w = widget.width ?? 2;
+    const h = widget.height ?? 1;
+    const small = !forModal && isSmallWidget(widget);
+    
+    // 小サイズ時はタイトルのみ
+    if (small) {
+      return (
+        <div 
+          className="w-full h-full bg-slate-100 dark:bg-slate-700 rounded-xl flex flex-col items-center justify-center cursor-pointer"
+          onClick={() => setDetailWidget(widget)}
+        >
+          {WIDGET_ICONS[widget.id]}
+          <span className="text-[10px] text-slate-600 dark:text-slate-400 mt-1">{WIDGET_NAMES[widget.id]}</span>
+        </div>
+      );
+    }
     
     switch (widget.id) {
       case 'start_timer':
@@ -344,7 +374,7 @@ export const Dashboard: React.FC = () => {
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatTimeJapanese(realtimeDailyGoal)}
             </span>
-            {w > 1 && <span className="text-[10px] text-slate-500">目標</span>}
+            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">目標</span>}
           </div>
         );
 
@@ -358,7 +388,7 @@ export const Dashboard: React.FC = () => {
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatTimeJapanese(todayStudiedHours)}
             </span>
-            {w > 1 && <span className="text-[10px] text-slate-500">今日</span>}
+            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">今日</span>}
           </div>
         );
 
@@ -372,7 +402,7 @@ export const Dashboard: React.FC = () => {
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatTimeJapanese(totalStudiedHours)}
             </span>
-            {w > 1 && <span className="text-[10px] text-slate-500">総計</span>}
+            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">総計</span>}
           </div>
         );
 
@@ -383,7 +413,7 @@ export const Dashboard: React.FC = () => {
             <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-sm' : 'text-xs'} mt-1`}>
               {formatCountdownJapanese(timeRemainingSeconds)}
             </span>
-            {w > 1 && <span className="text-[10px] text-slate-500">残り</span>}
+            {w > 1 && h > 1 && <span className="text-[10px] text-slate-500">残り</span>}
           </div>
         );
 
@@ -408,16 +438,10 @@ export const Dashboard: React.FC = () => {
 
   // 編集モードUI
   if (isEditMode) {
-    const gridMap = getGridMap(draggingWidget ?? undefined);
+    const gridMap = getGridMap(movingWidget ?? undefined);
     
     return (
-      <div 
-        className="fixed inset-0 z-40 bg-slate-50 dark:bg-slate-900 flex flex-col"
-        onTouchMove={handlePointerMove}
-        onTouchEnd={() => { handleDragEnd(); handleLongPressEnd(); }}
-        onMouseMove={handlePointerMove}
-        onMouseUp={() => { handleDragEnd(); handleLongPressEnd(); }}
-      >
+      <div className="fixed inset-0 z-40 bg-slate-50 dark:bg-slate-900 flex flex-col">
         {/* ヘッダー */}
         <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">レイアウト編集</h2>
@@ -426,7 +450,7 @@ export const Dashboard: React.FC = () => {
               setIsEditMode(false);
               setSelectedWidget(null);
               setIsEditing(false);
-              setDraggingWidget(null);
+              setMovingWidget(null);
             }}
             className="p-2 rounded-xl bg-primary-600 text-white"
           >
@@ -437,131 +461,90 @@ export const Dashboard: React.FC = () => {
         {/* グリッドエリア */}
         <div className="flex-1 overflow-auto p-4">
           <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-2 text-center">
-            タップで編集 / 長押しでドラッグ移動
+            タップで編集 / 「移動」ボタンで再配置
           </p>
           <div 
-            ref={gridRef}
-            className="relative bg-white dark:bg-slate-800 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 p-1"
+            className="bg-white dark:bg-slate-800 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 p-1"
             style={{
               display: 'grid',
-              gridTemplateColumns: `repeat(${GRID_COLS}, ${CELL_SIZE}px)`,
-              gridTemplateRows: `repeat(${GRID_ROWS}, ${CELL_SIZE}px)`,
+              gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
               gap: '4px',
             }}
           >
-            {/* グリッドセル（背景） */}
-            {Array(GRID_ROWS * GRID_COLS).fill(null).map((_, index) => {
-              const x = index % GRID_COLS;
-              const y = Math.floor(index / GRID_COLS);
-              const widgetId = gridMap[y]?.[x];
-              const isOccupied = widgetId !== null;
-              const isDropHere = dropTarget && dropTarget.x === x && dropTarget.y === y;
-              const canDropHere = selectedWidget && !draggingWidget && canPlaceWidget(x, y, editWidth, editHeight);
-              
-              return (
-                <div
-                  key={`cell-${x}-${y}`}
-                  onClick={() => !isOccupied && handleGridCellClick(x, y)}
-                  className={`border-2 rounded transition-colors ${
-                    isDropHere
-                      ? 'border-primary-500 bg-primary-200 dark:bg-primary-800'
-                      : isOccupied
-                        ? 'border-transparent bg-transparent'
-                        : canDropHere
-                          ? 'border-primary-300 bg-primary-50 dark:bg-primary-900/20 cursor-pointer'
-                          : 'border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'
-                  }`}
-                  style={{
-                    gridColumn: `${x + 1} / ${x + 2}`,
-                    gridRow: `${y + 1} / ${y + 2}`,
-                  }}
-                />
-              );
-            })}
-
-            {/* ウィジェット（絶対位置） */}
-            {visibleWidgets.map((widget) => {
-              const isDragging = widget.id === draggingWidget;
-              const isSelected = widget.id === selectedWidget;
-              const gx = widget.gridX ?? 0;
-              const gy = widget.gridY ?? 0;
-              const w = widget.width ?? 2;
-              const h = widget.height ?? 1;
-              
-              if (isDragging) return null; // ドラッグ中は別でレンダリング
-              
-              return (
-                <div
-                  key={`widget-${widget.id}`}
-                  className={`rounded-lg transition-all cursor-pointer ${
-                    isSelected
-                      ? 'ring-2 ring-primary-500 ring-offset-2'
-                      : ''
-                  }`}
-                  style={{
-                    gridColumn: `${gx + 1} / ${gx + w + 1}`,
-                    gridRow: `${gy + 1} / ${gy + h + 1}`,
-                  }}
-                  onClick={() => handleWidgetTap(widget)}
-                  onTouchStart={(e) => handleLongPressStart(widget, e)}
-                  onTouchEnd={handleLongPressEnd}
-                  onMouseDown={(e) => handleLongPressStart(widget, e)}
-                  onMouseUp={handleLongPressEnd}
-                  onMouseLeave={handleLongPressEnd}
-                >
-                  <div className="relative w-full h-full">
-                    {renderWidgetContent(widget)}
-                    <div className="absolute top-1 left-1 p-1 bg-black/30 rounded">
-                      <GripVertical size={12} className="text-white" />
+            {/* グリッドセルとウィジェット */}
+            {Array(GRID_ROWS).fill(null).map((_, rowIndex) => (
+              Array(GRID_COLS).fill(null).map((_, colIndex) => {
+                const x = colIndex;
+                const y = rowIndex;
+                const widgetId = gridMap[y]?.[x];
+                const widget = widgetId ? visibleWidgets.find(w => w.id === widgetId) : null;
+                
+                const isWidgetStart = widget && widget.gridX === x && widget.gridY === y;
+                const isWidgetPart = widget && !isWidgetStart;
+                const canPlace = selectedWidget && canPlaceWidget(x, y, editWidth, editHeight, movingWidget ?? undefined);
+                
+                if (isWidgetPart) return null;
+                
+                if (isWidgetStart && widget) {
+                  const gw = widget.width ?? 2;
+                  const gh = widget.height ?? 1;
+                  const isSelected = selectedWidget === widget.id;
+                  
+                  return (
+                    <div
+                      key={`widget-${widget.id}`}
+                      className={`rounded-lg transition-all cursor-pointer ${isSelected ? 'ring-2 ring-primary-500' : ''}`}
+                      style={{
+                        gridColumn: `span ${gw}`,
+                        gridRow: `span ${gh}`,
+                        minHeight: '60px',
+                      }}
+                      onClick={() => handleWidgetTap(widget)}
+                    >
+                      <div className="w-full h-full bg-primary-50 dark:bg-primary-900/20 border border-primary-200 dark:border-primary-800 rounded-lg flex items-center justify-center">
+                        <span className="text-xs font-medium text-primary-700 dark:text-primary-300">
+                          {WIDGET_NAMES[widget.id]} ({gw}×{gh})
+                        </span>
+                      </div>
                     </div>
+                  );
+                }
+                
+                // 空きセル
+                return (
+                  <div
+                    key={`cell-${x}-${y}`}
+                    onClick={() => canPlace && handleGridCellClick(x, y)}
+                    className={`aspect-square border-2 rounded transition-colors flex items-center justify-center text-[10px] ${
+                      canPlace
+                        ? 'border-primary-400 bg-primary-100 dark:bg-primary-900/30 cursor-pointer hover:bg-primary-200'
+                        : 'border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50'
+                    }`}
+                  >
+                    {canPlace && <Plus size={14} className="text-primary-500" />}
                   </div>
-                </div>
-              );
-            })}
-
-            {/* ドラッグ中のウィジェット（フローティング） */}
-            {draggingWidget && gridRef.current && (
-              <div
-                className="fixed pointer-events-none z-50 opacity-80 scale-105"
-                style={{
-                  left: dragPosition.x - dragOffset.x,
-                  top: dragPosition.y - dragOffset.y,
-                  width: `${editWidth * (CELL_SIZE + 4) - 4}px`,
-                  height: `${editHeight * (CELL_SIZE + 4) - 4}px`,
-                }}
-              >
-                {(() => {
-                  const w = visibleWidgets.find(w => w.id === draggingWidget);
-                  return w ? renderWidgetContent(w) : null;
-                })()}
-              </div>
-            )}
+                );
+              })
+            )).flat().filter(Boolean)}
           </div>
+          
+          {movingWidget && (
+            <p className="text-center text-xs text-primary-600 dark:text-primary-400 mt-2">
+              移動先の空きセルをタップしてください
+            </p>
+          )}
         </div>
 
         {/* 整形ゾーン */}
-        {selectedWidget && !draggingWidget && (
+        {selectedWidget && (
           <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
                 {WIDGET_NAMES[selectedWidget]} の編集
               </span>
-              <div className="flex gap-2">
-                {isEditing && (
-                  <button
-                    onClick={() => removeWidget(selectedWidget)}
-                    className="px-3 py-1 text-xs bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg"
-                  >
-                    削除
-                  </button>
-                )}
-                <button
-                  onClick={() => { setSelectedWidget(null); setIsEditing(false); }}
-                  className="text-xs text-slate-500"
-                >
-                  閉じる
-                </button>
-              </div>
+              <button onClick={() => { setSelectedWidget(null); setIsEditing(false); setMovingWidget(null); }} className="text-xs text-slate-500">
+                閉じる
+              </button>
             </div>
             
             {/* 幅 */}
@@ -578,7 +561,7 @@ export const Dashboard: React.FC = () => {
             </div>
             
             {/* 高さ */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mb-3">
               <span className="text-xs text-slate-500 w-8">高さ</span>
               <button onClick={() => setEditHeight(Math.max(1, editHeight - 1))} className="p-1 rounded bg-slate-100 dark:bg-slate-700"><Minus size={14} /></button>
               <div className="flex-1 flex gap-1">
@@ -590,17 +573,45 @@ export const Dashboard: React.FC = () => {
               <span className="text-xs w-6 text-right">{editHeight}</span>
             </div>
             
-            {isEditing && (
-              <button
-                onClick={() => {
-                  const widget = visibleWidgets.find(w => w.id === selectedWidget);
-                  if (widget) placeWidget(selectedWidget, widget.gridX ?? 0, widget.gridY ?? 0, editWidth, editHeight);
-                }}
-                className="w-full mt-3 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium"
-              >
-                サイズを適用
-              </button>
-            )}
+            {/* ボタン */}
+            <div className="flex gap-2">
+              {isEditing && !movingWidget && (
+                <>
+                  <button
+                    onClick={() => {
+                      const widget = visibleWidgets.find(w => w.id === selectedWidget);
+                      if (widget) placeWidget(selectedWidget, widget.gridX ?? 0, widget.gridY ?? 0, editWidth, editHeight);
+                    }}
+                    className="flex-1 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium"
+                  >
+                    サイズ適用
+                  </button>
+                  <button
+                    onClick={() => {
+                      const widget = visibleWidgets.find(w => w.id === selectedWidget);
+                      if (widget) handleMoveWidget(widget);
+                    }}
+                    className="flex-1 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium"
+                  >
+                    移動
+                  </button>
+                  <button
+                    onClick={() => handleDeleteWidget(selectedWidget)}
+                    className="py-2 px-4 bg-red-500 text-white rounded-lg text-sm font-medium"
+                  >
+                    削除
+                  </button>
+                </>
+              )}
+              {movingWidget && (
+                <button
+                  onClick={() => setMovingWidget(null)}
+                  className="flex-1 py-2 bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium"
+                >
+                  移動キャンセル
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -619,6 +630,7 @@ export const Dashboard: React.FC = () => {
                       setEditWidth(2);
                       setEditHeight(1);
                       setIsEditing(false);
+                      setMovingWidget(null);
                     }
                   }}
                   disabled={isUsed}
@@ -635,12 +647,21 @@ export const Dashboard: React.FC = () => {
             })}
           </div>
         </div>
+
+        {/* 削除確認モーダル */}
+        {deleteConfirm && (
+          <DeleteConfirmModal
+            title={deleteConfirm.name}
+            onConfirm={() => removeWidget(deleteConfirm.id)}
+            onCancel={() => setDeleteConfirm(null)}
+          />
+        )}
       </div>
     );
   }
 
   // 通常モードUI - グリッド位置を厳密に守る
-  const maxY = Math.max(...visibleWidgets.map(w => (w.gridY ?? 0) + (w.height ?? 1)));
+  const maxY = Math.max(...visibleWidgets.map(w => (w.gridY ?? 0) + (w.height ?? 1)), 1);
   
   return (
     <div className="space-y-4 pb-24 md:pb-6">
@@ -660,9 +681,8 @@ export const Dashboard: React.FC = () => {
         </button>
       </header>
 
-      {/* ウィジェットグリッド - 絶対位置 */}
+      {/* ウィジェットグリッド */}
       <div 
-        className="relative"
         style={{
           display: 'grid',
           gridTemplateColumns: `repeat(${GRID_COLS}, 1fr)`,
@@ -689,6 +709,13 @@ export const Dashboard: React.FC = () => {
           );
         })}
       </div>
+
+      {/* ウィジェット詳細モーダル */}
+      {detailWidget && (
+        <WidgetDetailModal widget={detailWidget} onClose={() => setDetailWidget(null)}>
+          {renderWidgetContent(detailWidget, true)}
+        </WidgetDetailModal>
+      )}
 
       {/* Modals */}
       <AnimatePresence>

@@ -109,6 +109,37 @@ export const AppearanceSettings: React.FC = () => {
       <p className="text-xs text-slate-500 dark:text-slate-400">
         軽量化モードを有効にすると、アニメーションが無効になり、動作が軽快になります。古い端末やバッテリーを節約したい場合におすすめです。
       </p>
+
+      {/* 削除確認設定 */}
+      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-white dark:bg-slate-700 rounded-lg">
+            <Zap className="text-red-500" size={20} />
+          </div>
+          <div>
+            <h4 className="font-semibold text-slate-800 dark:text-slate-100">削除確認</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {settings.confirmBeforeDelete !== false ? '確認あり' : '確認なし'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => updateSettings({ ...settings, confirmBeforeDelete: settings.confirmBeforeDelete === false })}
+          className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+            settings.confirmBeforeDelete !== false ? 'bg-red-500' : 'bg-slate-300'
+          }`}
+        >
+          <span
+            className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${
+              settings.confirmBeforeDelete !== false ? 'translate-x-7' : 'translate-x-1'
+            }`}
+          />
+        </button>
+      </div>
+
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        削除確認を有効にすると、削除操作の前に確認ダイアログが表示されます。
+      </p>
     </div>
   );
 };
