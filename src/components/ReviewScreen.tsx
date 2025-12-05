@@ -88,7 +88,6 @@ export const ReviewScreen: React.FC = () => {
   };
 
   const labels = ['1日目', '3日目', '7日目', '14日目', '30日目', '60日目'];
-  const selectedCategory = settings.categories.find(c => c.id === newCategoryId);
 
   // カテゴリごとにアイテムをグループ化
   const groupedItems = settings.categories.reduce((acc, category) => {
@@ -145,28 +144,33 @@ export const ReviewScreen: React.FC = () => {
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               カテゴリ
             </label>
-            <div className="grid grid-cols-5 gap-2 mb-2">
+            <div className="flex flex-wrap gap-2">
               {settings.categories.map(category => (
                 <motion.button
                   key={category.id}
                   type="button"
                   onClick={() => setNewCategoryId(category.id)}
-                  className={`p-3 rounded-lg transition-all ${
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all border ${
                     newCategoryId === category.id
-                      ? 'ring-4 ring-primary-600 scale-110'
-                      : 'opacity-60 hover:opacity-100'
+                      ? 'border-primary-500 ring-2 ring-primary-500/30 bg-white dark:bg-slate-800'
+                      : 'border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700'
                   }`}
-                  style={{ backgroundColor: category.color }}
-                  title={category.name}
-                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                />
+                >
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: category.color }}
+                  />
+                  <span className={`${
+                    newCategoryId === category.id
+                      ? 'text-primary-700 dark:text-primary-300'
+                      : 'text-slate-600 dark:text-slate-300'
+                  }`}>
+                    {category.name}
+                  </span>
+                </motion.button>
               ))}
             </div>
-            {/* 選択中のカテゴリ名表示 */}
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400 text-right h-5">
-              {selectedCategory?.name || 'カテゴリを選択'}
-            </p>
           </div>
 
           {/* 内容入力 */}
@@ -181,16 +185,15 @@ export const ReviewScreen: React.FC = () => {
                 onChange={(e) => setNewContent(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddToPending()}
                 placeholder="例：英単語100個、微分積分の公式"
-                className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-xl focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-800 dark:text-slate-100"
+                className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all text-slate-800 dark:text-slate-100 text-sm"
               />
               <motion.button
                 onClick={handleAddToPending}
                 disabled={!newContent.trim()}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-colors"
-                whileHover={{ scale: newContent.trim() ? 1.02 : 1 }}
+                className="flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-slate-700 dark:text-slate-200 font-medium rounded-lg transition-colors text-sm"
                 whileTap={{ scale: newContent.trim() ? 0.98 : 1 }}
               >
-                <ListPlus size={20} />
+                <ListPlus size={18} />
                 リストへ
               </motion.button>
             </div>
