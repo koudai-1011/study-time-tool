@@ -122,6 +122,12 @@ export const ReviewScreen: React.FC = () => {
 
   // CSVエクスポート
   const handleExportCSV = () => {
+    if (reviewItems.length === 0) return;
+    
+    if (!window.confirm('学習記録をCSV形式でダウンロードしますか？')) {
+      return;
+    }
+
     const headers = ['カテゴリ', '学習内容', '基準日', '復習進捗', ...(intervals.map(d => `${d}日後`))].join(',');
     const rows = reviewItems.map(item => {
       const category = settings.categories.find(c => c.id === item.categoryId)?.name || '不明';
@@ -159,11 +165,20 @@ export const ReviewScreen: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <motion.button
-            onClick={handleExportCSV}
-            disabled={reviewItems.length === 0}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200 disabled:opacity-50"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              if (reviewItems.length === 0) {
+                alert('エクスポートするデータがありません');
+                return;
+              }
+              handleExportCSV();
+            }}
+            className={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-colors ${
+              reviewItems.length > 0 
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 hover:bg-green-200' 
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+            }`}
+            whileHover={{ scale: reviewItems.length > 0 ? 1.05 : 1 }}
+            whileTap={{ scale: reviewItems.length > 0 ? 0.95 : 1 }}
           >
             <Download size={18} />
             CSV

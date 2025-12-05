@@ -1,8 +1,10 @@
-import React, { useRef, useEffect } from 'react';
+import { useRef, useEffect } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import { motion, AnimatePresence } from 'framer-motion';
 import { LayoutDashboard, History, Settings as SettingsIcon, Clock, BookOpen } from 'lucide-react';
+import { App as CapacitorApp } from '@capacitor/app';
 import { useStudy } from '../context/StudyContext';
+import { useDialog } from '../context/DialogContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -12,6 +14,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange }) => {
   const { isSwipeEnabled, settings } = useStudy();
+  const { isOpen, close } = useDialog();
   const reviewEnabled = settings.reviewSettings?.enabled || false;
   const reduceAnimations = settings.reduceAnimations || false;
   
@@ -23,9 +26,56 @@ export const Layout: React.FC<LayoutProps> = ({ children, activeTab, onTabChange
   // direction: positive means moving to higher index (to the right)
   const direction = currentIndex - prevIndexRef.current;
 
+  // バックボタンハンドリング用のRef
+  const activeTabRef = useRef(activeTab);
+  const isOpenRef = useRef(isOpen);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
+
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
   useEffect(() => {
     prevIndexRef.current = currentIndex;
   }, [currentIndex]);
+
+  // Androidバックボタンのハンドリング
+  useEffect(() => {
+    let listenerHandle: any = null;
+
+    const setupListener = async () => {
+      listenerHandle = await CapacitorApp.addListener('backButton', () => {
+        // ダイアログが開いている場合は閉じる
+        if (isOpenRef.current) {
+          close();
+          return;
+        }
+
+        // ダッシュボード以外にいる場合はダッシュボードに戻る
+        if (activeTabRef.current !== 'dashboard') {
+          onTabChange('dashboard');
+          return;
+        }
+
+        // ダッシュボードにいる場合はアプリ終了（デフォルト挙動に近いが明示的）
+        // canGoBackがあればWebView履歴を戻るが、今回のRouter構成ではないので無視
+        if (activeTabRef.current === 'dashboard') {
+          CapacitorApp.exitApp();
+        }
+      });
+    };
+
+    setupListener();
+
+    return () => {
+      if (listenerHandle) {
+        listenerHandle.remove();
+      }
+    };
+  }, [close, onTabChange]);
 
   const handlers = useSwipeable({
     onSwipedLeft: () => {

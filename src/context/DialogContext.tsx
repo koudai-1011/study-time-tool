@@ -5,6 +5,8 @@ interface DialogContextType {
   showDialog: (options: DialogOptions) => Promise<boolean>;
   alert: (message: string, options?: Partial<DialogOptions>) => Promise<void>;
   confirm: (message: string, options?: Partial<DialogOptions>) => Promise<boolean>;
+  isOpen: boolean;
+  close: () => void;
 }
 
 const DialogContext = createContext<DialogContextType | undefined>(undefined);
@@ -49,8 +51,12 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
   }, [showDialog]);
 
+  const close = useCallback(() => {
+    handleClose(false);
+  }, [handleClose]);
+
   return (
-    <DialogContext.Provider value={{ showDialog, alert, confirm }}>
+    <DialogContext.Provider value={{ showDialog, alert, confirm, isOpen, close }}>
       {children}
       <Dialog
         isOpen={isOpen}

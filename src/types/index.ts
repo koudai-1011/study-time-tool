@@ -13,18 +13,20 @@ export interface StudyLog {
 
 export interface NotificationSettings {
   enabled: boolean;
-  pomodoroTimer: boolean;
-  timerCompletion: boolean;
-  longStudyBreak: boolean;
-  dailyGoalAchievement: boolean;
-  dailyReminder: boolean;
-  eveningReminder: boolean;
-  deadlineWarning: boolean;
-  pomodoroFocusMinutes: number; // デフォルト: 25
-  pomodoroBreakMinutes: number; // デフォルト: 5
-  dailyReminderTime: string; // HH:MM format
-  eveningReminderTime: string; // HH:MM format
-  longStudyBreakMinutes: number; // デフォルト: 120 (2時間)
+  
+  // 新しい通知設定
+  reviewNotification: boolean; // 復習通知
+  reviewNotificationTime: string;
+
+  timerProgressNotification: boolean; // 通常タイマー常時通知
+  pomodoroProgressNotification: boolean; // ポモドーロ常時通知
+
+  goalCheckNotification: boolean; // 目標達成チェック通知
+  goalCheckTime: string;
+
+  // 設定値（通知トリガーではないが設定として保持）
+  pomodoroFocusMinutes: number;
+  pomodoroBreakMinutes: number;
 }
 
 export interface Settings {
@@ -43,7 +45,7 @@ export interface Settings {
   confirmBeforeDelete?: boolean; // 削除前に確認を表示
 }
 
-export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart' | 'today_review';
+export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart' | 'today_review' | 'sabotage';
 
 export type DashboardWidgetSize = 'small' | 'medium' | 'large' | 'full';
 

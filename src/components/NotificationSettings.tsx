@@ -1,23 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useStudy } from '../context/StudyContext';
 import { useNotification } from '../hooks/useNotification';
-import { Bell, Clock, Target, Calendar, Moon, AlertTriangle } from 'lucide-react';
+import { Bell, Clock, CheckCircle, BookOpen, AlertCircle } from 'lucide-react';
 import type { NotificationSettings as NotificationSettingsType } from '../types';
 
 const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettingsType = {
   enabled: true,
-  pomodoroTimer: false,
-  timerCompletion: true,
-  longStudyBreak: true,
-  dailyGoalAchievement: true,
-  dailyReminder: false,
-  eveningReminder: false,
-  deadlineWarning: true,
+  reviewNotification: true,
+  reviewNotificationTime: '09:00',
+  timerProgressNotification: true,
+  pomodoroProgressNotification: true,
+  goalCheckNotification: true,
+  goalCheckTime: '21:00',
   pomodoroFocusMinutes: 25,
   pomodoroBreakMinutes: 5,
-  dailyReminderTime: '09:00',
-  eveningReminderTime: '20:00',
-  longStudyBreakMinutes: 120,
 };
 
 export const NotificationSettings: React.FC = () => {
@@ -33,10 +29,6 @@ export const NotificationSettings: React.FC = () => {
 
   const handleToggle = (key: keyof NotificationSettingsType) => {
     setNotifSettings(prev => ({ ...prev, [key]: !prev[key] }));
-  };
-
-  const handleNumberChange = (key: keyof NotificationSettingsType, value: number) => {
-    setNotifSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const handleTimeChange = (key: keyof NotificationSettingsType, value: string) => {
@@ -55,68 +47,39 @@ export const NotificationSettings: React.FC = () => {
       await requestPermission();
     }
 
-    // 日次リマインダー設定
-    if (notifSettings.enabled && notifSettings.dailyReminder && notifSettings.dailyReminderTime) {
-      const [hour, minute] = notifSettings.dailyReminderTime.split(':').map(Number);
+    // 復習通知の設定 (ID: 1001)
+    if (notifSettings.enabled && notifSettings.reviewNotification && notifSettings.reviewNotificationTime) {
+      const [hour, minute] = notifSettings.reviewNotificationTime.split(':').map(Number);
       await scheduleRepeatingNotification(
-        2001, 
-        '📚 学習開始のお知らせ', 
-        `今日の目標: ${dailyGoalHours}時間\n学習を始めましょう！`, 
-        hour, 
+        1001,
+        '📚 本日の復習',
+        '復習するべき項目があります。確認しましょう！',
+        hour,
         minute
       );
     } else {
-      await cancelNotification(2001);
+      await cancelNotification(1001);
     }
 
-    // 夜間リマインダー設定
-    if (notifSettings.enabled && notifSettings.eveningReminder && notifSettings.eveningReminderTime) {
-      const [hour, minute] = notifSettings.eveningReminderTime.split(':').map(Number);
+    // 目標達成チェック通知の設定 (ID: 1002)
+    // 実際には日次バッチなどで目標達成判定が必要だが、ここでは指定時間に「状況確認」を促す通知として設定する。
+    // 通知の文言は「目標達成状況を確認しましょう」とする。
+    // ※要件では「達成できていません」だが、静的なスケジュールでは判定できないため、毎日定時にチェックを促す形にするか、
+    // あるいはアプリ起動時にバックグラウンド処理が必要だが、Web/Capacitorの制約上、単純な繰り返し通知で実装する。
+    // 通知受信時にアプリを開いて確認してもらうフロー。
+    if (notifSettings.enabled && notifSettings.goalCheckNotification && notifSettings.goalCheckTime) {
+      const [hour, minute] = notifSettings.goalCheckTime.split(':').map(Number);
       await scheduleRepeatingNotification(
-        2002, 
-        '🌙 今日の学習進捗', 
-        '今日の学習目標は達成できましたか？進捗を確認しましょう。', 
-        hour, 
+        1002,
+        '🎯 今日の目標確認',
+        `本日の目標時間は${dailyGoalHours.toFixed(1)}時間です。達成状況を確認しましょう！`,
+        hour,
         minute
       );
     } else {
-      await cancelNotification(2002);
+      await cancelNotification(1002);
     }
   };
-
-  const ToggleRow = ({ 
-    icon, 
-    label, 
-    description, 
-    settingKey 
-  }: { 
-    icon: React.ReactNode; 
-    label: string; 
-    description: string; 
-    settingKey: keyof NotificationSettingsType;
-  }) => (
-    <div className="flex items-start justify-between py-4 border-b border-slate-100 dark:border-slate-700 last:border-0">
-      <div className="flex items-start gap-3 flex-1">
-        <div className="mt-1">{icon}</div>
-        <div>
-          <h4 className="font-semibold text-slate-800 dark:text-slate-100">{label}</h4>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{description}</p>
-        </div>
-      </div>
-      <button
-        onClick={() => handleToggle(settingKey)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          notifSettings[settingKey] ? 'bg-primary-600' : 'bg-slate-300 dark:bg-slate-600'
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            notifSettings[settingKey] ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
-    </div>
-  );
 
   return (
     <div className="space-y-6">
@@ -145,174 +108,134 @@ export const NotificationSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* 通知の種類 */}
-      <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 transition-opacity duration-300 ${
+      {/* 通知設定項目 */}
+      <div className={`space-y-4 transition-opacity duration-300 ${
         !notifSettings.enabled ? 'opacity-50 pointer-events-none grayscale' : ''
       }`}>
-        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">通知の種類</h3>
         
-        <div className="space-y-0">
-          <ToggleRow
-            icon={<Clock className="text-orange-500" size={20} />}
-            label="ポモドーロタイマー"
-            description="集中時間と休憩時間を自動で切り替え"
-            settingKey="pomodoroTimer"
-          />
+        {/* 復習通知 */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <BookOpen className="text-blue-500" size={20} />
+              <div>
+                <h4 className="font-semibold text-slate-800 dark:text-slate-100">復習リマインダー</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">本日の復習内容を通知します</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggle('reviewNotification')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                notifSettings.reviewNotification ? 'bg-blue-500' : 'bg-slate-300 dark:bg-slate-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                notifSettings.reviewNotification ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
           
-          <ToggleRow
-            icon={<Clock className="text-blue-500" size={20} />}
-            label="タイマー経過・完了通知"
-            description="計測中の経過時間と完了を通知"
-            settingKey="timerCompletion"
-          />
-          
-          <ToggleRow
-            icon={<AlertTriangle className="text-amber-500" size={20} />}
-            label="長時間学習リマインダー"
-            description="連続学習時に休憩を促す"
-            settingKey="longStudyBreak"
-          />
-          
-          <ToggleRow
-            icon={<Target className="text-green-500" size={20} />}
-            label="日次目標達成通知"
-            description="今日の目標を達成したときに祝福"
-            settingKey="dailyGoalAchievement"
-          />
-          
-          <ToggleRow
-            icon={<Bell className="text-purple-500" size={20} />}
-            label="日次学習リマインダー"
-            description="毎日設定した時刻に学習を促す"
-            settingKey="dailyReminder"
-          />
-          
-          <ToggleRow
-            icon={<Moon className="text-indigo-500" size={20} />}
-            label="夜間リマインダー"
-            description="夜に未達成の場合にリマインド"
-            settingKey="eveningReminder"
-          />
-          
-          <ToggleRow
-            icon={<Calendar className="text-red-500" size={20} />}
-            label="期限警告"
-            description="目標期限が近づいたときに警告"
-            settingKey="deadlineWarning"
-          />
+          {notifSettings.reviewNotification && (
+            <div className="ml-8 mt-2 pl-4 border-l-2 border-slate-100 dark:border-slate-700">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                通知時刻
+              </label>
+              <input
+                type="time"
+                value={notifSettings.reviewNotificationTime}
+                onChange={(e) => handleTimeChange('reviewNotificationTime', e.target.value)}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
+              />
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* ポモドーロ設定 */}
-      {notifSettings.pomodoroTimer && (
-        <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 transition-opacity duration-300 ${
-          !notifSettings.enabled ? 'opacity-50 pointer-events-none grayscale' : ''
-        }`}>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">ポモドーロタイマー設定</h3>
+        {/* 目標未達通知 */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="text-red-500" size={20} />
+              <div>
+                <h4 className="font-semibold text-slate-800 dark:text-slate-100">目標達成チェック</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">指定時刻に目標達成状況を確認・通知します</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleToggle('goalCheckNotification')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                notifSettings.goalCheckNotification ? 'bg-red-500' : 'bg-slate-300 dark:bg-slate-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                notifSettings.goalCheckNotification ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                集中時間
+          {notifSettings.goalCheckNotification && (
+            <div className="ml-8 mt-2 pl-4 border-l-2 border-slate-100 dark:border-slate-700">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                通知時刻
               </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={notifSettings.pomodoroFocusMinutes}
-                  onChange={(e) => handleNumberChange('pomodoroFocusMinutes', Number(e.target.value))}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
-                  min="1"
-                  max="120"
-                  style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">分</span>
+              <input
+                type="time"
+                value={notifSettings.goalCheckTime}
+                onChange={(e) => handleTimeChange('goalCheckTime', e.target.value)}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* タイマー常時表示 */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Clock className="text-emerald-500" size={20} />
+              <div>
+                <h4 className="font-semibold text-slate-800 dark:text-slate-100">通常タイマー常時表示</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">計測中に通知欄に経過時間を表示し続けます</p>
               </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                休憩時間
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={notifSettings.pomodoroBreakMinutes}
-                  onChange={(e) => handleNumberChange('pomodoroBreakMinutes', Number(e.target.value))}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
-                  min="1"
-                  max="60"
-                  style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">分</span>
-              </div>
-            </div>
+            <button
+              onClick={() => handleToggle('timerProgressNotification')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                notifSettings.timerProgressNotification ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                notifSettings.timerProgressNotification ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
           </div>
         </div>
-      )}
 
-      {/* Reminder times */}
-      {(notifSettings.dailyReminder || notifSettings.eveningReminder || notifSettings.longStudyBreak) && (
-        <div className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6 transition-opacity duration-300 ${
-          !notifSettings.enabled ? 'opacity-50 pointer-events-none grayscale' : ''
-        }`}>
-          <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">リマインダー設定</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {notifSettings.dailyReminder && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                日次リマインダー時刻
-              </label>
-              <input
-                type="time"
-                value={notifSettings.dailyReminderTime}
-                onChange={(e) => handleTimeChange('dailyReminderTime', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
-                style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
-              />
-            </div>
-          )}
-          
-          {notifSettings.eveningReminder && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                夜間リマインダー時刻
-              </label>
-              <input
-                type="time"
-                value={notifSettings.eveningReminderTime}
-                onChange={(e) => handleTimeChange('eveningReminderTime', e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
-                style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
-              />
-            </div>
-          )}
-          
-          {notifSettings.longStudyBreak && (
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                長時間学習の基準時間
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  value={notifSettings.longStudyBreakMinutes}
-                  onChange={(e) => handleNumberChange('longStudyBreakMinutes', Number(e.target.value))}
-                  className="w-full px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none"
-                  min="30"
-                  max="240"
-                  step="30"
-                  style={{ colorScheme: settings.isDarkMode ? 'dark' : 'light' }}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">分</span>
+        {/* ポモドーロ常時表示 */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="text-orange-500" size={20} />
+              <div>
+                <h4 className="font-semibold text-slate-800 dark:text-slate-100">ポモドーロ常時表示</h4>
+                <p className="text-sm text-slate-500 dark:text-slate-400">計測中に通知欄に残り時間と状態を表示します</p>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                この時間連続で学習すると休憩を促す通知が表示されます
-              </p>
             </div>
-          )}
+            <button
+              onClick={() => handleToggle('pomodoroProgressNotification')}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                notifSettings.pomodoroProgressNotification ? 'bg-orange-500' : 'bg-slate-300 dark:bg-slate-600'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                notifSettings.pomodoroProgressNotification ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </div>
         </div>
-        </div>
-      )}
+
+      </div>
 
       {/* 保存ボタン */}
       <button

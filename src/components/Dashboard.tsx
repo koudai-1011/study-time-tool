@@ -28,6 +28,7 @@ const WIDGET_NAMES: Record<DashboardWidgetType, string> = {
   remaining_time: '残り',
   category_chart: 'グラフ',
   today_review: '復習',
+  sabotage: 'サボり',
 };
 
 // ウィジェットアイコンのマッピング
@@ -41,6 +42,7 @@ const WIDGET_ICONS: Record<DashboardWidgetType, React.ReactNode> = {
   remaining_time: <Clock size={16} />,
   category_chart: <Target size={16} />,
   today_review: <Eye size={16} />,
+  sabotage: <Skull size={16} />,
 };
 
 // 削除確認モーダル
@@ -156,6 +158,7 @@ export const Dashboard: React.FC = () => {
   const allWidgetIds: DashboardWidgetType[] = [
     'start_timer', 'pomodoro_timer', 'progress', 'daily_goal', 
     'today_study', 'total_study', 'remaining_time', 'category_chart',
+    'sabotage',
     ...(reviewEnabled ? ['today_review' as const] : []),
   ];
 
@@ -169,7 +172,8 @@ export const Dashboard: React.FC = () => {
     { id: 'total_study', visible: true, order: 5, size: 'small', width: 2, height: 1, gridX: 0, gridY: 3 },
     { id: 'remaining_time', visible: true, order: 6, size: 'small', width: 2, height: 1, gridX: 2, gridY: 3 },
     { id: 'category_chart', visible: true, order: 7, size: 'large', width: 4, height: 2, gridX: 0, gridY: 4 },
-    ...(reviewEnabled ? [{ id: 'today_review' as const, visible: true, order: 8, size: 'large' as const, width: 4, height: 1, gridX: 0, gridY: 6 }] : []),
+    { id: 'sabotage', visible: true, order: 8, size: 'small', width: 2, height: 1, gridX: 2, gridY: 6 }, // 暫定配置
+    ...(reviewEnabled ? [{ id: 'today_review' as const, visible: true, order: 9, size: 'large' as const, width: 4, height: 1, gridX: 0, gridY: 7 }] : []),
   ];
 
   // レイアウトを取得
@@ -366,14 +370,6 @@ export const Dashboard: React.FC = () => {
               <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate">進捗</span>
               <div className="flex items-center gap-2">
                 <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-lg' : 'text-sm'}`}>{progress.toFixed(0)}%</span>
-                {w > 2 && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setShowSabotageModal(true); }}
-                    className="p-1 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-500 hover:bg-red-200 dark:hover:bg-red-900/50"
-                  >
-                    <Skull size={14} />
-                  </button>
-                )}
               </div>
             </div>
             <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">

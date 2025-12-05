@@ -219,12 +219,12 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
         {/* Close Button */}
         <button
           onClick={handleCloseClick}
-          className="absolute top-4 right-4 p-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 shadow-lg transition-all z-50"
+          className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4 p-3 rounded-full bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 shadow-lg transition-all z-50 mt-4 md:mt-0"
         >
           <X size={24} className="text-slate-600 dark:text-slate-300" />
         </button>
 
-        <div className="text-center w-full max-w-lg mx-auto relative z-10">
+        <div className="text-center w-full max-w-5xl mx-auto relative z-10 px-4">
           {/* Mode indicator */}
           <div className="mb-6">
             <span className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-lg shadow-sm ${
@@ -244,8 +244,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({ onClose }) => {
           </div>
 
           {/* Time Display */}
-          <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wider mb-8 md:mb-12 tabular-nums" style={{ willChange: 'transform, opacity' }}>
-            <span className="tabular-nums inline-block">{formatTime(remainingSeconds)}</span>
+          <div className="flex justify-center mb-8 md:mb-12">
+            <div className="text-6xl sm:text-8xl md:text-9xl lg:text-[10rem] font-bold text-slate-800 dark:text-slate-100 font-mono tracking-wider tabular-nums leading-none">
+              {formatTime(remainingSeconds)}
+            </div>
           </div>
 
           {/* Progress Bar (Simple) */}

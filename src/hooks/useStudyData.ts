@@ -1,10 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import type { Settings, StudyLog, Category } from '../types';
+import type { Settings, StudyLog, Category, NotificationSettings } from '../types';
 import type { User } from 'firebase/auth';
 
 const STORAGE_KEY = 'study-time-allocation-tool-data';
+
+const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  enabled: true,
+  reviewNotification: true,
+  reviewNotificationTime: '09:00',
+  timerProgressNotification: true,
+  pomodoroProgressNotification: true,
+  goalCheckNotification: true,
+  goalCheckTime: '21:00',
+  pomodoroFocusMinutes: 25,
+  pomodoroBreakMinutes: 5,
+};
 
 const DEFAULT_CATEGORIES: Category[] = [
   { id: 0, name: 'カテゴリー1', color: '#EF4444' }, // Red
@@ -26,6 +38,7 @@ export const useStudyData = (user: User | null) => {
     endDate: '',
     categories: DEFAULT_CATEGORIES,
     showDailyGoalLine: true,
+    notificationSettings: DEFAULT_NOTIFICATION_SETTINGS,
     dashboardLayout: {
       widgets: [
         { id: 'start_timer', visible: true, order: 0, size: 'full' },
