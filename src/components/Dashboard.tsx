@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
-import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, EyeOff, Square, RectangleHorizontal } from 'lucide-react';
+import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Square, RectangleHorizontal, GripVertical, Trash2 } from 'lucide-react';
 import type { DashboardWidget, DashboardWidgetSize, DashboardWidgetType } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { StatCard } from './StatCard';
@@ -13,25 +13,6 @@ import { TodayReviewWidget } from './TodayReviewWidget';
 import { SabotageModal } from './SabotageModal';
 import { ProgressDetailModal } from './ProgressDetailModal';
 import { StudyTimeDetailModal } from './StudyTimeDetailModal';
-
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-  useSortable
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 // サイズに応じたグリッドクラスを返す
 const getSizeClass = (size: DashboardWidgetSize): string => {
@@ -51,115 +32,112 @@ const getSizeClass = (size: DashboardWidgetSize): string => {
 
 // ウィジェット名のマッピング
 const WIDGET_NAMES: Record<DashboardWidgetType, string> = {
-  start_timer: '計測開始',
+  start_timer: '計測',
   pomodoro_timer: 'ポモドーロ',
   progress: '進捗',
-  daily_goal: '1日の目標',
-  today_study: '今日の学習',
-  total_study: '総学習時間',
-  remaining_time: '残り時間',
-  category_chart: '円グラフ',
+  daily_goal: '目標',
+  today_study: '今日',
+  total_study: '総計',
+  remaining_time: '残り',
+  category_chart: 'グラフ',
   today_review: '復習',
 };
 
-// ソータブルウィジェットコンポーネント
-interface SortableWidgetProps {
-  widget: DashboardWidget;
-  isEditMode: boolean;
-  onSizeChange: (id: DashboardWidgetType, size: DashboardWidgetSize) => void;
-  onVisibilityChange: (id: DashboardWidgetType) => void;
-  children: React.ReactNode;
+// ウィジェットアイコンのマッピング
+const WIDGET_ICONS: Record<DashboardWidgetType, React.ReactNode> = {
+  start_timer: <Maximize2 size={16} />,
+  pomodoro_timer: <Clock size={16} />,
+  progress: <Target size={16} />,
+  daily_goal: <Calendar size={16} />,
+  today_study: <Clock size={16} />,
+  total_study: <TrendingUp size={16} />,
+  remaining_time: <Clock size={16} />,
+  category_chart: <Target size={16} />,
+  today_review: <Eye size={16} />,
+};
+
+// 編集モードのグリッドスロット
+interface GridSlotProps {
+  index: number;
+  widget: DashboardWidget | null;
+  isDropTarget: boolean;
+  onRemove: (id: DashboardWidgetType) => void;
+  onDrop: (index: number) => void;
+  onDragOver: (index: number) => void;
 }
 
-const SortableWidget: React.FC<SortableWidgetProps> = ({
-  widget,
-  isEditMode,
-  onSizeChange,
-  onVisibilityChange,
-  children
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ id: widget.id, disabled: !isEditMode });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    zIndex: isDragging ? 50 : 1,
-  };
-
-  const sizeClass = getSizeClass(widget.size);
-
-  if (!isEditMode) {
-    return <div className={sizeClass}>{children}</div>;
+const GridSlot: React.FC<GridSlotProps> = ({ index, widget, isDropTarget, onRemove, onDrop, onDragOver }) => {
+  const baseClass = "min-h-[60px] rounded-xl border-2 transition-all flex items-center justify-center";
+  
+  if (widget) {
+    const sizeClass = widget.size === 'large' || widget.size === 'full' ? 'col-span-2' : 'col-span-1';
+    return (
+      <div 
+        className={`${sizeClass} ${baseClass} border-primary-300 dark:border-primary-700 bg-primary-50 dark:bg-primary-900/20`}
+        onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
+        onDrop={() => onDrop(index)}
+      >
+        <div className="flex items-center gap-2 px-3 py-2">
+          <GripVertical size={14} className="text-primary-400" />
+          <span className="text-sm font-medium text-primary-700 dark:text-primary-300">
+            {WIDGET_NAMES[widget.id]}
+          </span>
+          <span className="text-xs text-primary-500 dark:text-primary-400">
+            ({widget.size === 'small' ? '小' : '大'})
+          </span>
+          <button
+            onClick={() => onRemove(widget.id)}
+            className="ml-2 p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`${sizeClass} relative ${isDragging ? 'opacity-90 scale-105' : ''}`}
+    <div 
+      className={`${baseClass} ${isDropTarget 
+        ? 'border-primary-500 bg-primary-100 dark:bg-primary-900/30 border-solid' 
+        : 'border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/30'
+      }`}
+      onDragOver={(e) => { e.preventDefault(); onDragOver(index); }}
+      onDrop={() => onDrop(index)}
     >
-      {/* ウィジェット本体（薄く表示） */}
-      <div className="opacity-40 pointer-events-none">
-        {children}
-      </div>
-      
-      {/* 編集オーバーレイ */}
-      <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-primary-400 bg-primary-500/5 flex flex-col">
-        {/* ドラッグハンドル（上部） */}
-        <div 
-          className="flex-1 flex items-center justify-center cursor-grab active:cursor-grabbing"
-          {...attributes}
-          {...listeners}
-        >
-          <div className="bg-white dark:bg-slate-800 px-3 py-1.5 rounded-lg shadow-sm border border-slate-200 dark:border-slate-600">
-            <span className="text-primary-700 dark:text-primary-300 text-xs font-bold">
-              ⋮⋮ {WIDGET_NAMES[widget.id]}
-            </span>
-          </div>
-        </div>
-        
-        {/* コントロールボタン（下部） */}
-        <div className="flex gap-2 justify-center pb-3">
-          <button
-            onClick={() => onSizeChange(widget.id, 'small')}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shadow-sm ${
-              widget.size === 'small' 
-                ? 'bg-primary-600 text-white' 
-                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
-            }`}
-            title="小サイズ"
-          >
-            <Square size={14} />
-          </button>
-          
-          <button
-            onClick={() => onSizeChange(widget.id, 'large')}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shadow-sm ${
-              widget.size === 'large' || widget.size === 'full'
-                ? 'bg-primary-600 text-white' 
-                : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
-            }`}
-            title="大サイズ"
-          >
-            <RectangleHorizontal size={14} />
-          </button>
+      <span className="text-xs text-slate-400 dark:text-slate-500">
+        {isDropTarget ? 'ここにドロップ' : '空きスロット'}
+      </span>
+    </div>
+  );
+};
 
-          <button
-            onClick={() => onVisibilityChange(widget.id)}
-            className="w-9 h-9 rounded-lg flex items-center justify-center bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 shadow-sm"
-            title="非表示にする"
-          >
-            <EyeOff size={14} />
-          </button>
-        </div>
-      </div>
+// ウィジェットパレットアイテム
+interface PaletteItemProps {
+  widgetId: DashboardWidgetType;
+  isUsed: boolean;
+  selectedSize: DashboardWidgetSize;
+  onDragStart: (id: DashboardWidgetType) => void;
+  onDragEnd: () => void;
+}
+
+const PaletteItem: React.FC<PaletteItemProps> = ({ widgetId, isUsed, selectedSize, onDragStart, onDragEnd }) => {
+  return (
+    <div
+      draggable={!isUsed}
+      onDragStart={() => onDragStart(widgetId)}
+      onDragEnd={onDragEnd}
+      className={`flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2 rounded-xl transition-all ${
+        isUsed 
+          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed' 
+          : 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 cursor-grab active:cursor-grabbing hover:scale-105'
+      }`}
+    >
+      {WIDGET_ICONS[widgetId]}
+      <span className="text-[10px] font-medium whitespace-nowrap">{WIDGET_NAMES[widgetId]}</span>
+      {!isUsed && (
+        <span className="text-[8px] text-primary-500">{selectedSize === 'small' ? '小' : '大'}</span>
+      )}
     </div>
   );
 };
@@ -184,6 +162,11 @@ export const Dashboard: React.FC = () => {
   const [showStudyTimeModal, setShowStudyTimeModal] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isEditMode, setIsEditMode] = useState(false);
+  
+  // テトリス風編集の状態
+  const [selectedSize, setSelectedSize] = useState<DashboardWidgetSize>('small');
+  const [draggingWidget, setDraggingWidget] = useState<DashboardWidgetType | null>(null);
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
 
   // Update current time every second for real-time daily goal calculation
   useEffect(() => {
@@ -203,6 +186,12 @@ export const Dashboard: React.FC = () => {
 
   // Default widgets definition with size
   const reviewEnabled = settings.reviewSettings?.enabled || false;
+  const allWidgetIds: DashboardWidgetType[] = [
+    'start_timer', 'pomodoro_timer', 'progress', 'daily_goal', 
+    'today_study', 'total_study', 'remaining_time', 'category_chart',
+    ...(reviewEnabled ? ['today_review' as const] : []),
+  ];
+
   const defaultWidgets: DashboardWidget[] = [
     { id: 'start_timer', visible: true, order: 0, size: 'full' },
     { id: 'pomodoro_timer', visible: true, order: 1, size: 'full' },
@@ -223,61 +212,66 @@ export const Dashboard: React.FC = () => {
     }).sort((a, b) => a.order - b.order)
   };
 
-  // dnd-kit sensors - ドラッグ開始の距離制限を設定
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 100,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  const visibleWidgets = layout.widgets.filter(w => w.visible);
+  const usedWidgetIds = visibleWidgets.map(w => w.id);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const visibleWidgets = layout.widgets.filter(w => w.visible);
-      const oldIndex = visibleWidgets.findIndex(w => w.id === active.id);
-      const newIndex = visibleWidgets.findIndex(w => w.id === over.id);
-      
-      const newVisibleWidgets = arrayMove(visibleWidgets, oldIndex, newIndex);
-      
-      // Update order for all widgets
-      const hiddenWidgets = layout.widgets.filter(w => !w.visible);
-      const allWidgets = [...newVisibleWidgets, ...hiddenWidgets].map((w, i) => ({ ...w, order: i }));
-      
-      updateSettings({
-        ...settings,
-        dashboardLayout: { widgets: allWidgets }
-      });
-    }
+  // テトリス風編集のハンドラー
+  const handlePaletteDragStart = (id: DashboardWidgetType) => {
+    setDraggingWidget(id);
   };
 
-  const handleSizeChange = (id: DashboardWidgetType, size: DashboardWidgetSize) => {
-    const newWidgets = layout.widgets.map(w => 
-      w.id === id ? { ...w, size } : w
-    );
-    updateSettings({
-      ...settings,
-      dashboardLayout: { widgets: newWidgets }
+  const handlePaletteDragEnd = () => {
+    setDraggingWidget(null);
+    setDropTargetIndex(null);
+  };
+
+  const handleGridDragOver = (index: number) => {
+    setDropTargetIndex(index);
+  };
+
+  const handleGridDrop = (index: number) => {
+    if (!draggingWidget) return;
+    
+    // 新しいウィジェットを追加
+    const newWidget: DashboardWidget = {
+      id: draggingWidget,
+      visible: true,
+      order: index,
+      size: selectedSize,
+    };
+    
+    // 既存のウィジェットの順序を更新
+    const updatedWidgets = layout.widgets.map(w => {
+      if (w.id === draggingWidget) {
+        return { ...w, visible: true, order: index, size: selectedSize };
+      }
+      if (w.visible && w.order >= index) {
+        return { ...w, order: w.order + 1 };
+      }
+      return w;
     });
+    
+    // 新規ウィジェットがない場合は追加
+    if (!updatedWidgets.find(w => w.id === draggingWidget)) {
+      updatedWidgets.push(newWidget);
+    }
+    
+    updateSettings({
+      ...settings,
+      dashboardLayout: { widgets: updatedWidgets.sort((a, b) => a.order - b.order) }
+    });
+    
+    setDraggingWidget(null);
+    setDropTargetIndex(null);
   };
 
-  const handleVisibilityChange = (id: DashboardWidgetType) => {
-    const newWidgets = layout.widgets.map(w => 
-      w.id === id ? { ...w, visible: !w.visible } : w
+  const handleRemoveWidget = (id: DashboardWidgetType) => {
+    const updatedWidgets = layout.widgets.map(w => 
+      w.id === id ? { ...w, visible: false } : w
     );
     updateSettings({
       ...settings,
-      dashboardLayout: { widgets: newWidgets }
+      dashboardLayout: { widgets: updatedWidgets }
     });
   };
 
@@ -398,9 +392,105 @@ export const Dashboard: React.FC = () => {
     }
   };
 
-  const visibleWidgets = layout.widgets.filter(w => w.visible);
-  const hiddenWidgets = layout.widgets.filter(w => !w.visible);
+  // 編集モードのUI
+  if (isEditMode) {
+    return (
+      <div className="fixed inset-0 z-40 bg-slate-50 dark:bg-slate-900 flex flex-col">
+        {/* ヘッダー */}
+        <header className="flex justify-between items-center p-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">レイアウト編集</h2>
+          <button
+            onClick={() => setIsEditMode(false)}
+            className="p-2 rounded-xl bg-primary-600 text-white"
+          >
+            <Check size={20} />
+          </button>
+        </header>
 
+        {/* グリッドプレビュー */}
+        <div className="flex-1 overflow-auto p-4">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 text-center">
+            下のパレットからウィジェットをドラッグして配置
+          </p>
+          <div className="grid grid-cols-2 gap-2 p-3 bg-white dark:bg-slate-800 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600">
+            {visibleWidgets.map((widget, index) => (
+              <GridSlot
+                key={widget.id}
+                index={index}
+                widget={widget}
+                isDropTarget={dropTargetIndex === index}
+                onRemove={handleRemoveWidget}
+                onDrop={handleGridDrop}
+                onDragOver={handleGridDragOver}
+              />
+            ))}
+            {/* 空きスロット（常に2つ表示） */}
+            {[...Array(Math.max(0, 2 - (visibleWidgets.length % 2 === 0 ? 0 : 1)))].map((_, i) => (
+              <GridSlot
+                key={`empty-${i}`}
+                index={visibleWidgets.length + i}
+                widget={null}
+                isDropTarget={dropTargetIndex === visibleWidgets.length + i}
+                onRemove={() => {}}
+                onDrop={handleGridDrop}
+                onDragOver={handleGridDragOver}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* サイズ選択 */}
+        <div className="px-4 py-2 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800">
+          <div className="flex items-center justify-center gap-4">
+            <span className="text-xs text-slate-500 dark:text-slate-400">サイズ:</span>
+            <button
+              onClick={() => setSelectedSize('small')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                selectedSize === 'small'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              <Square size={12} />
+              小
+            </button>
+            <button
+              onClick={() => setSelectedSize('large')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                selectedSize === 'large'
+                  ? 'bg-primary-600 text-white'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              <RectangleHorizontal size={12} />
+              大
+            </button>
+          </div>
+        </div>
+
+        {/* ウィジェットパレット */}
+        <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 safe-area-pb">
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 mb-2 text-center">
+            ウィジェットを長押しでドラッグ
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {allWidgetIds.map((id) => (
+              <PaletteItem
+                key={id}
+                widgetId={id}
+                isUsed={usedWidgetIds.includes(id)}
+                selectedSize={selectedSize}
+                onDragStart={handlePaletteDragStart}
+                onDragEnd={handlePaletteDragEnd}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 通常モードのUI
   return (
     <div className="space-y-4 pb-24 md:pb-6">
       <header className="flex justify-between items-center mb-4">
@@ -413,74 +503,21 @@ export const Dashboard: React.FC = () => {
         
         {/* 編集ボタン */}
         <button
-          onClick={() => setIsEditMode(!isEditMode)}
-          className={`p-2 rounded-xl transition-colors ${
-            isEditMode 
-              ? 'bg-primary-600 text-white' 
-              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
-          }`}
+          onClick={() => setIsEditMode(true)}
+          className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
         >
-          {isEditMode ? <Check size={20} /> : <Pencil size={20} />}
+          <Pencil size={20} />
         </button>
       </header>
 
-      {/* 編集モード時のヘルプ */}
-      {isEditMode && (
-        <div className="bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300 text-xs p-3 rounded-xl text-center">
-          ドラッグで並び替え • サイズ変更 • 非表示
-        </div>
-      )}
-
       {/* ウィジェットグリッド */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={visibleWidgets.map(w => w.id)}
-          strategy={rectSortingStrategy}
-        >
-          <div className={`grid grid-cols-2 gap-3 ${isEditMode ? 'p-2 bg-slate-100 dark:bg-slate-800/50 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600' : ''}`}>
-            {/* 編集モード時のガイドライン表示 */}
-            {isEditMode && (
-              <div className="col-span-2 text-center text-xs text-slate-400 dark:text-slate-500 py-1">
-                📦 ウィジェット名をドラッグして並び替え
-              </div>
-            )}
-            {visibleWidgets.map((widget) => (
-              <SortableWidget
-                key={widget.id}
-                widget={widget}
-                isEditMode={isEditMode}
-                onSizeChange={handleSizeChange}
-                onVisibilityChange={handleVisibilityChange}
-              >
-                {renderWidgetContent(widget)}
-              </SortableWidget>
-            ))}
+      <div className="grid grid-cols-2 gap-3">
+        {visibleWidgets.map((widget) => (
+          <div key={widget.id} className={getSizeClass(widget.size)}>
+            {renderWidgetContent(widget)}
           </div>
-        </SortableContext>
-      </DndContext>
-
-      {/* 非表示ウィジェット一覧（編集モード時のみ） */}
-      {isEditMode && hiddenWidgets.length > 0 && (
-        <div className="mt-4">
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">非表示のウィジェット</p>
-          <div className="flex flex-wrap gap-2">
-            {hiddenWidgets.map((widget) => (
-              <button
-                key={widget.id}
-                onClick={() => handleVisibilityChange(widget.id)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-xs"
-              >
-                <Eye size={12} />
-                {WIDGET_NAMES[widget.id]}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+        ))}
+      </div>
 
       {/* Modals */}
       <AnimatePresence>
