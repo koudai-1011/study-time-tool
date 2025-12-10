@@ -23,16 +23,17 @@ import { CSS } from '@dnd-kit/utilities';
 
 
 const WIDGET_LABELS: Record<DashboardWidgetType, string> = {
-  start_timer: '計測開始ボタン',
-  pomodoro_timer: '🍅 ポモドーロ',
-  progress: '全体の進捗',
-  daily_goal: '1日の目標',
-  today_study: '今日の学習時間',
+  start_timer: '計測ボタン',
+  pomodoro_timer: 'ポモドーロ',
+  progress: '進捗バー',
+  daily_goal: '目標達成度',
+  today_study: '今日の学習',
   total_study: '総学習時間',
   remaining_time: '残り時間',
-  category_chart: '学習カテゴリ比率',
-  today_review: '本日の復習',
-  sabotage: 'サボりモード',
+  category_chart: '科目チャート',
+  today_review: '今日の復習',
+  sabotage_mode: 'サボりモード',
+  streak: '継続日数',
 };
 
 const SIZE_OPTIONS: { value: DashboardWidgetSize; icon: React.ReactNode; label: string }[] = [

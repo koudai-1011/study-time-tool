@@ -216,10 +216,10 @@ export const ReviewScreen: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-auto"
+              className="glass-modal rounded-3xl max-w-2xl w-full max-h-[80vh] overflow-auto"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+              <div className="p-4 border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm sticky top-0 z-10">
                 <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">復習カレンダー</h3>
                 <button onClick={() => setShowCalendar(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg">
                   <X size={20} className="text-slate-500" />
@@ -234,7 +234,7 @@ export const ReviewScreen: React.FC = () => {
       </AnimatePresence>
 
       {/* 入力欄 */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+      <div className="premium-card p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">新しい学習項目を追加</h3>
           <button
@@ -459,7 +459,7 @@ export const ReviewScreen: React.FC = () => {
       </AnimatePresence>
 
       {/* 今日の復習 */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+      <div className="premium-card p-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
           今日の復習 ({todayReviews.length}件)
         </h3>
@@ -476,12 +476,12 @@ export const ReviewScreen: React.FC = () => {
               return (
                 <motion.div
                   key={item.id}
-                  className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl"
+                  className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-100 dark:border-slate-700/50"
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div
-                    className="w-12 h-12 rounded-lg flex-shrink-0"
+                    className="w-12 h-12 rounded-lg flex-shrink-0 shadow-sm"
                     style={{ backgroundColor: category?.color }}
                   />
                   <div className="flex-1">
@@ -506,7 +506,7 @@ export const ReviewScreen: React.FC = () => {
       </div>
 
       {/* 全項目リスト（アコーディオン） */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700 shadow-sm">
+      <div className="premium-card p-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-4">
           全項目 ({reviewItems.length}件)
         </h3>

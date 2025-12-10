@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useStudy } from '../context/StudyContext';
 import { useNotification } from './useNotification';
 import { formatTime } from '../utils/timeFormat';
@@ -56,15 +56,39 @@ export const useNotificationManager = (options: NotificationManagerOptions) => {
     }
   }, [elapsed, isRunning, isPomodoroMode, isPomodoroBreak, notifSettings, showNotification]);
 
+  const lastNotifiedTime = useRef<number>(0);
+
   // タイマー実行中の通知更新（常時表示）
   useEffect(() => {
+    // リセット時は参照もリセット
+    if (elapsed === 0) {
+      lastNotifiedTime.current = 0;
+      return;
+    }
+
     // 通常タイマーの場合
     if (!isPomodoroMode && (!isRunning || !isNotificationEnabled('timerProgressNotification'))) return;
     // ポモドーロの場合
     if (isPomodoroMode && (!isRunning || !isNotificationEnabled('pomodoroProgressNotification'))) return;
 
-    // 1分ごとに更新 (0秒, 60秒, 120秒...)
-    if (elapsed % 60 !== 0 && elapsed !== 0) return;
+    // 前回の通知から1分以上経過しているか、またはまだ通知していない分に入ったか確認
+    // 単純な % 60 チェックだと、レンダリングタイミングによってスキップされる可能性があるため、
+    // 現在の「分」が前回の通知時の「分」より大きいかで判定する
+    const currentMinute = Math.floor(elapsed / 60);
+    const lastMinute = Math.floor(lastNotifiedTime.current / 60);
+
+    // 1分経っていない場合はスキップ
+    if (currentMinute <= lastMinute && lastNotifiedTime.current !== 0) return;
+    
+    // 最初の1分未満での通知（例：開始直後）を避ける場合、currentMinute > 0 のチェックが必要だが、
+    // 要件的に「時間が変動しない」なので、1分ごとに更新したい。
+    // elapsed=60 (1分) になったら currentMinute=1, lastMinute=0 -> 実行
+    // elapsed=120 (2分) になったら currentMinute=2, lastMinute=1 -> 実行
+    
+    if (currentMinute === 0) return; // 0分台は通知しない（開始通知があるため）
+
+    // 通知済み時刻を更新
+    lastNotifiedTime.current = elapsed;
 
     const categoryName = getCategoryName(selectedCategory);
     const timeStr = formatTime(elapsed);

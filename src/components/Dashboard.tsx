@@ -3,10 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useStudy } from '../context/StudyContext';
 import { Timer } from './Timer';
 import { PomodoroTimer } from './PomodoroTimer';
-import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, X, Skull } from 'lucide-react';
+import { Target, Calendar, Clock, TrendingUp, Maximize2, Pencil, Check, Eye, Minus, Plus, X, Skull, Flame } from 'lucide-react';
 import type { DashboardWidget, DashboardWidgetType } from '../types';
 import { formatTimeJapanese, formatCountdownJapanese } from '../utils/timeFormat';
 import { CategoryChart } from './CategoryChart';
+import { StreakWidget } from './widgets/StreakWidget';
 import { TodayReviewWidget } from './TodayReviewWidget';
 
 import { SabotageModal } from './SabotageModal';
@@ -28,7 +29,8 @@ const WIDGET_NAMES: Record<DashboardWidgetType, string> = {
   remaining_time: '残り',
   category_chart: 'グラフ',
   today_review: '復習',
-  sabotage: 'サボり',
+  sabotage_mode: 'サボり',
+  streak: '継続',
 };
 
 // ウィジェットアイコンのマッピング
@@ -42,7 +44,8 @@ const WIDGET_ICONS: Record<DashboardWidgetType, React.ReactNode> = {
   remaining_time: <Clock size={16} />,
   category_chart: <Target size={16} />,
   today_review: <Eye size={16} />,
-  sabotage: <Skull size={16} />,
+  sabotage_mode: <Skull size={16} />,
+  streak: <Flame size={16} />,
 };
 
 // 削除確認モーダル
@@ -158,7 +161,7 @@ export const Dashboard: React.FC = () => {
   const allWidgetIds: DashboardWidgetType[] = [
     'start_timer', 'pomodoro_timer', 'progress', 'daily_goal', 
     'today_study', 'total_study', 'remaining_time', 'category_chart',
-    'sabotage',
+    'sabotage_mode', 'streak',
     ...(reviewEnabled ? ['today_review' as const] : []),
   ];
 
@@ -172,8 +175,9 @@ export const Dashboard: React.FC = () => {
     { id: 'total_study', visible: true, order: 5, size: 'small', width: 2, height: 1, gridX: 0, gridY: 3 },
     { id: 'remaining_time', visible: true, order: 6, size: 'small', width: 2, height: 1, gridX: 2, gridY: 3 },
     { id: 'category_chart', visible: true, order: 7, size: 'large', width: 4, height: 2, gridX: 0, gridY: 4 },
-    { id: 'sabotage', visible: true, order: 8, size: 'small', width: 2, height: 1, gridX: 2, gridY: 6 }, // 暫定配置
-    ...(reviewEnabled ? [{ id: 'today_review' as const, visible: true, order: 9, size: 'large' as const, width: 4, height: 1, gridX: 0, gridY: 7 }] : []),
+    { id: 'streak', visible: true, order: 8, size: 'small', width: 2, height: 1, gridX: 0, gridY: 6 },
+    { id: 'sabotage_mode', visible: true, order: 9, size: 'small', width: 2, height: 1, gridX: 2, gridY: 6 }, // 暫定配置
+    ...(reviewEnabled ? [{ id: 'today_review' as const, visible: true, order: 10, size: 'large' as const, width: 4, height: 1, gridX: 0, gridY: 7 }] : []),
   ];
 
   // レイアウトを取得
@@ -196,9 +200,6 @@ export const Dashboard: React.FC = () => {
 
   const visibleWidgets = layout.widgets.filter(w => w.visible);
   
-  useEffect(() => {
-    console.log('Visible Widgets:', visibleWidgets);
-  }, [visibleWidgets]);
 
   const usedWidgetIds = visibleWidgets.map(w => w.id);
 
@@ -324,6 +325,7 @@ export const Dashboard: React.FC = () => {
   // ウィジェットをレンダリング
   const renderWidgetContent = (widget: DashboardWidget, forModal = false) => {
     const w = widget.width ?? 2;
+    const h = widget.height ?? 1;
     const small = !forModal && isSmallWidget(widget);
     
     // 小サイズ時はタイトルのみ
@@ -372,13 +374,25 @@ export const Dashboard: React.FC = () => {
             whileTap={isEditMode ? undefined : { scale: 0.98 }}
           >
             <div className="flex justify-between items-center mb-1">
-              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate">進捗</span>
+              <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400 truncate">
+                {progress >= 100 ? '目標達成！🎉' : progress >= 80 ? 'あと少し！🔥' : '進捗'}
+              </span>
               <div className="flex items-center gap-2">
-                <span className={`font-bold text-slate-800 dark:text-slate-100 ${w > 1 ? 'text-lg' : 'text-sm'}`}>{progress.toFixed(0)}%</span>
+                <span className={`font-bold ${w > 1 ? 'text-lg' : 'text-sm'} ${progress >= 80 ? 'text-primary-600 dark:text-primary-400' : 'text-slate-800 dark:text-slate-100'}`}>
+                  {progress.toFixed(0)}%
+                </span>
               </div>
             </div>
             <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div className="h-full bg-primary-500 rounded-full" style={{ width: `${progress}%` }} />
+              <motion.div 
+                className={`h-full rounded-full ${progress >= 100 ? 'bg-gradient-to-r from-yellow-400 to-orange-500' : progress >= 80 ? 'bg-gradient-to-r from-primary-500 to-indigo-500' : 'bg-primary-500'}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                style={{
+                  boxShadow: progress >= 80 ? '0 0 10px rgba(99, 102, 241, 0.5)' : 'none'
+                }}
+              />
             </div>
           </motion.div>
         );
@@ -443,7 +457,7 @@ export const Dashboard: React.FC = () => {
           </div>
         );
 
-      case 'sabotage':
+      case 'sabotage_mode':
         return (
           <div 
             className="w-full h-full bg-slate-800 text-white rounded-xl p-2 flex flex-col justify-center items-center overflow-hidden cursor-pointer shadow-md border-2 border-slate-700 hover:bg-slate-700 transition-colors relative z-10"
@@ -461,6 +475,13 @@ export const Dashboard: React.FC = () => {
         return (
           <div className="w-full h-full overflow-hidden rounded-xl">
             <TodayReviewWidget />
+          </div>
+        );
+
+      case 'streak':
+        return (
+          <div className="w-full h-full overflow-hidden rounded-xl">
+            <StreakWidget isSmall={w < 2 || h < 2} />
           </div>
         );
 
@@ -707,6 +728,7 @@ export const Dashboard: React.FC = () => {
         </div>
         
         <button
+          id="edit-layout-button"
           onClick={() => setIsEditMode(true)}
           className="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
         >
@@ -732,6 +754,7 @@ export const Dashboard: React.FC = () => {
           return (
             <div 
               key={widget.id}
+              id={`widget-${widget.id}`}
               style={{
                 gridColumn: `${gx + 1} / ${gx + w + 1}`,
                 gridRow: `${gy + 1} / ${gy + h + 1}`,

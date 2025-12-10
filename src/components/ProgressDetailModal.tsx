@@ -148,15 +148,16 @@ export const ProgressDetailModal: React.FC<ProgressDetailModalProps> = ({ onClos
                     name="目標ライン"
                   />
                 )}
-                <Area
-                  type="monotone"
-                  dataKey="progress"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  fillOpacity={1}
-                  fill="url(#colorProgress)"
-                  animationDuration={1500}
-                />
+                  <Area
+                    type="monotone"
+                    dataKey="progress"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    fillOpacity={1}
+                    fill="url(#colorProgress)"
+                    animationDuration={2000}
+                    animationEasing="ease-out"
+                  />
               </ComposedChart>
             </ResponsiveContainer>
           </div>

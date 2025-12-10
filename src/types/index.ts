@@ -45,7 +45,7 @@ export interface Settings {
   confirmBeforeDelete?: boolean; // 削除前に確認を表示
 }
 
-export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart' | 'today_review' | 'sabotage';
+export type DashboardWidgetType = 'start_timer' | 'pomodoro_timer' | 'progress' | 'daily_goal' | 'today_study' | 'total_study' | 'remaining_time' | 'category_chart' | 'today_review' | 'sabotage_mode' | 'streak';
 
 export type DashboardWidgetSize = 'small' | 'medium' | 'large' | 'full';
 

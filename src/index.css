@@ -47,3 +47,18 @@ button,
   -ms-user-select: text;
   user-select: text;
 }
+
+@layer components {
+  .glass-panel {
+    @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-white/20 dark:border-slate-700/30 shadow-lg;
+  }
+  .glass-modal {
+    @apply bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-700/30 shadow-2xl;
+  }
+  .premium-shadow {
+    @apply shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)];
+  }
+  .premium-card {
+    @apply bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-[0_8px_30px_rgb(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)] transition-all hover:shadow-[0_20px_40px_rgb(0,0,0,0.12)] dark:hover:shadow-[0_20px_40px_rgb(0,0,0,0.4)];
+  }
+}

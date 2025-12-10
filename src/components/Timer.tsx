@@ -7,6 +7,7 @@ import { useTimer } from '../hooks/useTimer';
 import { useWakeLock } from '../hooks/useWakeLock';
 import { useNotification } from '../hooks/useNotification';
 import { useNotificationManager } from '../hooks/useNotificationManager';
+import confetti from 'canvas-confetti';
 
 interface TimerProps {
   fullscreen?: boolean;
@@ -135,6 +136,13 @@ export const Timer: React.FC<TimerProps> = ({ fullscreen = false, onClose }) => 
   };
 
   const handleSaveAndClose = () => {
+    // Peak-End Rule: Celebrate completion!
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 },
+      colors: ['#4f46e5', '#818cf8', '#fbbf24', '#34d399']
+    });
     handleStop();
     setShowConfirmModal(false);
   };

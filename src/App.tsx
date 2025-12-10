@@ -7,8 +7,8 @@ import { HistoryScreen } from './components/HistoryScreen';
 import { ReviewScreen } from './components/ReviewScreen';
 import { Settings } from './components/Settings';
 import { DialogProvider } from './context/DialogContext';
-
 import { MotionConfig } from 'framer-motion';
+import { OnboardingOverlay } from './components/OnboardingOverlay';
 
 // Component to handle dark mode class
 const DarkModeWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -64,7 +64,12 @@ function App() {
           <MotionConfigWrapper>
             <DialogProvider>
               <Layout activeTab={activeTab} onTabChange={setActiveTab}>
-                {activeTab === 'dashboard' && <Dashboard />}
+                {activeTab === 'dashboard' && (
+                  <>
+                    <Dashboard />
+                    <OnboardingOverlay />
+                  </>
+                )}
                 {activeTab === 'review' && <ReviewScreen />}
                 {activeTab === 'calendar' && <HistoryScreen />}
                 {activeTab === 'settings' && <Settings />}

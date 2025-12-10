@@ -49,7 +49,7 @@ export const useStudyData = (user: User | null) => {
         { id: 'total_study', visible: true, order: 5, size: 'small' },
         { id: 'remaining_time', visible: true, order: 6, size: 'small' },
         { id: 'category_chart', visible: true, order: 7, size: 'large' },
-        { id: 'sabotage', visible: true, order: 8, size: 'small' },
+        { id: 'sabotage_mode', visible: true, order: 8, size: 'small', width: 2, height: 1, gridX: 2, gridY: 6 },
       ]
     }
   });
@@ -63,10 +63,10 @@ export const useStudyData = (user: User | null) => {
     // ディープコピーして変更可能にする
     let widgets = [...loadedWidgets];
 
-    // sabotageウィジェットがない場合は追加
-    if (!widgets.some(w => w.id === 'sabotage')) {
+    // sabotage_modeウィジェットがない場合は追加
+    if (!widgets.some(w => w.id === 'sabotage_mode')) {
       widgets.push({
-        id: 'sabotage',
+        id: 'sabotage_mode',
         visible: true,
         order: widgets.length,
         size: 'small',
